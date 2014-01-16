@@ -1,3 +1,7 @@
 *~
 *.asv
 *.mat
+out/
+*.class
+.idea/
+*.iml
