@@ -1,19 +1,48 @@
-package lp_adapter;
-
+import edu.berkeley.path.beats.jaxb.*;
+import edu.berkeley.path.beats.simulator.BeatsException;
+import edu.berkeley.path.beats.simulator.Scenario;
+import edu.berkeley.path.beats.simulator.ObjectFactory;
 import net.sf.javailp.*;
 
 /**
  * Created by gomes on 1/15/14.
  */
-public class javailptest {
+public class LPBuilder {
 
     public static void main(String [] args){
 
-        javailptest.problemA();
+        Scenario scenario = null;
+
+
+        try {
+            String configname = "C:\\Users\\gomes\\code\\research\\lp_ramp_metering\\data\\_smalltest_MPC.xml";
+            scenario = ObjectFactory.createAndLoadScenario(configname);
+        } catch (BeatsException e) {
+            e.printStackTrace();
+        }
+
+        //VehicleTypeSet vt_set = scenario.getVehicleTypeSet();
+        Network network = scenario.getNetworkSet().getNetwork().get(0);
+        DemandSet demand_set = scenario.getDemandSet();
+        //ActuatorSet actuators = scenario.getActuatorSet();
+        FundamentalDiagramSet fds = scenario.getFundamentalDiagramSet();
+        SplitRatioSet splitratios = scenario.getSplitRatioSet();
+
 
 
     }
 
+
+    public LPBuilder(){
+
+        Problem problem = new Problem();
+
+        Linear linear = new Linear();
+        linear.add(143, "x");
+        linear.add(60, "y");
+        problem.setObjective(linear, OptType.MAX);
+
+    }
 
     public static void problemA(){
         SolverFactory factory = new SolverFactoryLpSolve(); // use lp_solve
@@ -75,8 +104,4 @@ public class javailptest {
 
         System.out.println(result);
     }
-
-
-
-
 }
