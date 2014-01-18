@@ -20,7 +20,7 @@ public class FwySegment {
     private double n_max;
 
     // metering
-    private boolean is_metered;
+    public boolean is_metered;
     private double l_max;
     private double r_max;
 
@@ -28,6 +28,9 @@ public class FwySegment {
 //    private double [] demand_profile;
 //    private double [] split_ratio_profile;
 
+    ///////////////////////////////////////////////////////////////////
+    // construction
+    ///////////////////////////////////////////////////////////////////
 
     public FwySegment(Link ml_link,Link or_link,Link fr_link,FundamentalDiagram fd,Actuator actuator){
 
@@ -55,6 +58,39 @@ public class FwySegment {
         }
 
     }
+
+
+    ///////////////////////////////////////////////////////////////////
+    // get
+    ///////////////////////////////////////////////////////////////////
+
+    public boolean hasML(){
+        return ml_link!=null;
+    }
+
+    public boolean hasOR(){
+        return or_link!=null;
+    }
+
+    public boolean hasFR(){
+        return fr_link!=null;
+    }
+
+    public Long getMLid(){
+        return hasML() ?  ml_link.getId() : null;
+    }
+
+    public Long getORid(){
+        return hasOR() ?  or_link.getId() : null;
+    }
+
+    public Long getFRid(){
+        return hasFR() ?  fr_link.getId() : null;
+    }
+
+    ///////////////////////////////////////////////////////////////////
+    // Override
+    ///////////////////////////////////////////////////////////////////
 
 
     @Override
