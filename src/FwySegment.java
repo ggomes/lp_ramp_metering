@@ -2,6 +2,10 @@ import edu.berkeley.path.beats.jaxb.Actuator;
 import edu.berkeley.path.beats.jaxb.FundamentalDiagram;
 import edu.berkeley.path.beats.jaxb.Link;
 import edu.berkeley.path.beats.simulator.Parameters;
+import net.sf.javailp.Linear;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by gomes on 1/16/14.
@@ -9,20 +13,31 @@ import edu.berkeley.path.beats.simulator.Parameters;
 public class FwySegment {
 
     // link references
-    private Link ml_link;
-    private Link or_link;
-    private Link fr_link;
+    protected Link ml_link;
+    protected Link or_link;
+    protected Link fr_link;
 
     // fundamental diagram
-    private double vf;
-    private double w;
-    private double F;
-    private double n_max;
+    protected double vf;
+    protected double w;
+    protected double F;
+    protected double n_max;
+
+    // initial condition
+    protected double no;
+    protected double lo;
 
     // metering
-    public boolean is_metered;
-    private double l_max;
-    private double r_max;
+    protected boolean is_metered;
+    protected double l_max;
+    protected double r_max;
+
+    // constraints
+    protected List<Linear> lhs_MLcons = new ArrayList<Linear>();
+    protected List<Linear> lhs_ORcons = new ArrayList<Linear>();
+    protected List<Linear> lhs_MLffw = new ArrayList<Linear>();
+    protected List<Linear> lhs_MLcng = new ArrayList<Linear>();
+    protected List<Linear> lhs_ORdem = new ArrayList<Linear>();
 
     // data profiles
 //    private double [] demand_profile;
@@ -57,8 +72,14 @@ public class FwySegment {
             l_max = Double.POSITIVE_INFINITY;
         }
 
-    }
+        // constraints=
+        lhs_MLcons = new ArrayList<Linear>();
+        lhs_ORcons = new ArrayList<Linear>();
+        lhs_MLffw = new ArrayList<Linear>();
+        lhs_MLcng = new ArrayList<Linear>();
+        lhs_ORdem = new ArrayList<Linear>();
 
+    }
 
     ///////////////////////////////////////////////////////////////////
     // get
@@ -86,6 +107,14 @@ public class FwySegment {
 
     public Long getFRid(){
         return hasFR() ?  fr_link.getId() : null;
+    }
+
+    public double d(int k){
+        return Double.NaN;
+    }
+
+    public double betabar(int k){
+        return Double.NaN;
     }
 
     ///////////////////////////////////////////////////////////////////
