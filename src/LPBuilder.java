@@ -1,30 +1,35 @@
 import edu.berkeley.path.beats.jaxb.*;
 import net.sf.javailp.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * Created by gomes on 1/15/14.
+ * Ramp metering with linear programming
  */
 public class LPBuilder {
 
     private FwyNetwork fwy;
-    private int K;
-    private int I;
-    private double eta = 1.0;
-    private double gamma = 1d;
+    private int K;                      // number of time steps
+    private int I;                      // number of segments
+    private double eta = 1.0;           // J = TVH - eta*TVM
+    private double gamma = 1d;          // merge coefficient
     private Linear J = new Linear();
+
+    ///////////////////////////////////////////////////////////////////
+    // construction
+    ///////////////////////////////////////////////////////////////////
 
     public LPBuilder(Network network,FundamentalDiagramSet fds,ActuatorSet actuators,int K){
 
-        this.K = K;
-        this.I = fwy.getSegments().size();
-        fwy = new FwyNetwork(network,fds,actuators);
-
         int i,k;
 
-        // objective function
+        this.K = K;
+        this.I = fwy.getSegments().size();
+
+        // Make the freeway structure
+        fwy = new FwyNetwork(network,fds,actuators);
+
+        /* objective function:
+           sum_[I][K] n[i][k] + sum_[I][K] l[i][k] - eta sum_[I][K] f[i][k] - eta sum[I][K] r[i][k]
+         */
         for(i=0;i<I;i++){
             FwySegment seg = fwy.getSegments().get(i);
             for(k=0;k<K;k++){
@@ -39,7 +44,11 @@ public class LPBuilder {
             }
         }
 
-        // mainline conservation
+        /* mainline conservation (LHS)
+           for each i in 0...I-1, k in 0...K-1
+            {always}    {k>0}     {i>0}   {metered}       {betabar[i][k]>0}
+           n[i][k+1] -n[i][k] -f[i-1][k]  -r[i][k] +inv(betabar[i][k])*f[i][k]
+         */
         for(i=0;i<I;i++){
             FwySegment seg = fwy.getSegments().get(i);
             for(k=0;k<K;k++){
@@ -57,7 +66,11 @@ public class LPBuilder {
             }
         }
 
-        // onramp conservation
+        /* onramp conservation
+           for each metered i in 0...I-1, k in 0...K-1
+            {always}    {k>0}  {always}
+           l[i][k+1]  -l[i][k] +r[i][k]
+         */
         for(i=0;i<I;i++){
             FwySegment seg = fwy.getSegments().get(i);
             if(seg.is_metered){
@@ -72,7 +85,11 @@ public class LPBuilder {
             }
         }
 
-        // mainline flows - freeflow
+        /* mainline flows - freeflow
+           for each i in 0...I-1, k in 0...K-1
+           {always}           {k>0}                       {metered}
+           f[i][k] -betabar[i][k]*v[i]*n[i][k] - betabar[i][k]*v[i]*gamma*r[i][k]
+         */
         for(i=0;i<I;i++){
             FwySegment seg = fwy.getSegments().get(i);
             for(k=0;k<K;k++){
@@ -88,7 +105,11 @@ public class LPBuilder {
             }
         }
 
-        // mainline flows - congestion
+        /* mainline flows - congestion
+           for each i in 0...I-2, k in 0...K-1
+           {always}       {k>0}                {metered}
+           f[i][k] + w[i+1]*n[i+1][k] + w[i+1]*gamma*r[i+1][k]
+         */
         for(i=0;i<I-1;i++){
             FwySegment seg = fwy.getSegments().get(i);
             FwySegment next_seg = fwy.getSegments().get(i+1);
@@ -103,7 +124,11 @@ public class LPBuilder {
             }
         }
 
-        // onramp flow demand
+        /* onramp flow demand
+           for each metered i in 0...I-1, k in 0...K-1
+           {always}   {k>0}
+           r[i][k] - l[i][k]
+         */
         for(i=0;i<I;i++){
             FwySegment seg = fwy.getSegments().get(i);
             if(seg.is_metered){
@@ -117,12 +142,14 @@ public class LPBuilder {
         }
     }
 
-    public void problemA(InitialDensitySet ic,DemandSet demand_set,SplitRatioSet splitratios){
+    ///////////////////////////////////////////////////////////////////
+    // solve problem
+    ///////////////////////////////////////////////////////////////////
+
+    public void compute_optimal_metering(InitialDensitySet ic, DemandSet demand_set, SplitRatioSet splitratios){
 
         int i,k;
-        double fmax = 100;
-        double lmax = 100;
-        double rmax = 100;
+        double rhs;
 
         Problem L = new Problem();
         L.setObjective(J, OptType.MIN);
@@ -131,73 +158,98 @@ public class LPBuilder {
         for(i=0;i<I;i++){
             FwySegment seg = fwy.getSegments().get(i);
 
-            // initial conditions ................................
+            /* ml conservation
+               for each i in 0...I-1, k in 0...K-1
+                    {k>0}  {k==0}
+               LHS =  0  + n[i][0]
+            */
+            for(k=0;k<K;k++){
+                rhs = k==0 ? seg.no : 0;
+                L.add(seg.lhs_MLcons.get(k),"=",rhs);
+            }
 
-            // ml conservation
-            L.add(seg.lhs_MLcons.get(0),"<=",seg.no);
+            /* or conservation
+               for each metered i in 0...I-1, k in 0...K-1
+                     {always}  {k==0}
+               LHS = d[i][k] + l[i][0]
+             */
+            if(seg.is_metered){
+                for(k=0;k<K;k++){
+                    rhs = seg.d(k);
+                    rhs += k==0 ? seg.lo : 0;
+                    L.add(seg.lhs_ORcons.get(k),"=",rhs);
+                }
+            }
 
-            // or conservation
-            if(seg.is_metered)
-                L.add(seg.lhs_ORcons.get(0),"<=",seg.lo + seg.d(0));
+            /* ml flow freeflow
+               for each i in 0...I-1, k in 0...K-1
+                                {k==0}                      {!metered}
+               LHS <= betabar[i][0]*v[i]*n[i][0] + betabar[i][k]*v[i]*gamma*d[i][k]
+             */
+            for(k=0;k<K;k++){
+                rhs = k==0 ? seg.betabar(0)*seg.vf*seg.no : 0;
+                rhs += !seg.is_metered ? seg.betabar(k)*seg.vf*seg.d(k) : 0;
+                L.add(seg.lhs_MLffw.get(0),"<=",rhs);
+            }
 
-            // ml flow freeflow
-            L.add(seg.lhs_MLffw.get(0),"<=",(gamma*(seg.is_metered?0:seg.d(0)) + seg.no)*seg.vf*seg.betabar(0));
-
-            // ml flow congestion
+            /* ml flow congestion
+               for each i in 0...I-2, k in 0...K-1
+                         {always}              {k=0}             {!metered}
+               LHS <= w[i+1]*njam[i+1] - w[i+1]*n[i+1][0] - w[i+1]*gamma*d[i+1][k]
+             */
             if(i<I-1){
                 FwySegment next_seg = fwy.getSegments().get(i+1);
-                L.add(seg.lhs_MLcng.get(0),"<=", next_seg.w*(next_seg.n_max - next_seg.no - gamma*(next_seg.is_metered?0:next_seg.d(0))) );
+                for(k=0;k<K;k++){
+                    rhs = next_seg.w*next_seg.n_max;
+                    rhs += k==0 ? -next_seg.w*next_seg.no : 0;
+                    rhs += !next_seg.is_metered ? -gamma*next_seg.w*next_seg.d(0) : 0;
+                    L.add(seg.lhs_MLcng.get(0),"<=",rhs);
+                }
             }
 
-            // or flow demand
+            /* or flow demand
+               for each metered i in 0...I-1, k in 0...K-1
+                      {always}
+               LHS <= d[i][k]
+             */
             if(seg.is_metered)
-                L.add(seg.lhs_ORdem.get(0),"<=",seg.d(0));
-
-            // future times ...........................................
-            for(k=1;k<K;k++){
-
-                // ml conservation
-                L.add(seg.lhs_MLcons.get(k),"<=",0);
-
-                // or conservation
-                if(seg.is_metered)
-                    L.add(seg.lhs_ORcons.get(k),"<=",seg.d(k));
-
-                // ml flow freeflow
-                L.add(seg.lhs_MLffw.get(k),"<=",gamma*(seg.is_metered?0:seg.d(k))*seg.vf*seg.betabar(k));
-
-                // ml flow congestion
-                if(i<I-1){
-                    FwySegment next_seg = fwy.getSegments().get(i+1);
-                    L.add(seg.lhs_MLcng.get(k),"<=", next_seg.w*(next_seg.n_max - gamma*(next_seg.is_metered?0:next_seg.d(k))) );
-                }
-
-                // or flow demand
-                if(seg.is_metered)
+                for(k=0;k<K;k++)
                     L.add(seg.lhs_ORdem.get(k),"<=",seg.d(k));
 
-            }
         }
 
         // bounds
-        for(i=0;i<I-1;i++){
+        for(i=0;i<I;i++){
             FwySegment seg = fwy.getSegments().get(i);
 
             for(k=0;k<K;k++){
 
-                // mainline capacity
-                L.setVarUpperBound(getVar("f",i,k),fmax);
+                /* mainline capacity
+                   for each i in 0...I-1, k in 0...K-1
+                   f[i][k] <= f_max[i]
+                */
+                L.setVarUpperBound(getVar("f",i,k),seg.f_max);
 
                 if(seg.is_metered){
 
-                    // queue length limit
-                    L.setVarUpperBound(getVar("l",i,k+1),lmax);
+                    /* queue length limit
+                       for each metered i in 0...I-1, k in 0...K-1
+                       l[i][k] <= lmax[i]
+                     */
+                    L.setVarUpperBound(getVar("l",i,k+1),seg.l_max);
 
-                    // onramp flow positivity
+                    /* onramp flow positivity
+                       for each metered i in 0...I-1, k in 0...K-1
+                       r[i][k] >= 0
+                     */
+
                     L.setVarLowerBound(getVar("r",i,k),0);
 
-                    // maximum metering rate
-                    L.setVarUpperBound(getVar("r", i, k), rmax);
+                    /* maximum metering rate
+                       for each metered i in 0...I-1, k in 0...K-1
+                       r[i][k] <= rmax[i]
+                     */
+                    L.setVarUpperBound(getVar("r", i, k), seg.r_max);
                 }
             }
         }
@@ -211,6 +263,10 @@ public class LPBuilder {
 
         System.out.println(result);
     }
+
+    ///////////////////////////////////////////////////////////////////
+    // private
+    ///////////////////////////////////////////////////////////////////
 
     private String getVar(String name,int index,int timestep){
         return name+"_"+index+"_"+timestep;

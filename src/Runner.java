@@ -10,6 +10,7 @@ public class Runner {
 
     public static void main(String [] args){
 
+        // load the scenario
         Scenario scenario = null;
         try {
             String configname = "C:\\Users\\gomes\\code\\research\\lp_ramp_metering\\data\\15S_20131002_db.xml";
@@ -19,24 +20,22 @@ public class Runner {
             e.printStackTrace();
         }
 
-
         // constant information
-        int numtime = 10;
         Network network = scenario.getNetworkSet().getNetwork().get(0);
         ActuatorSet actuators = scenario.getActuatorSet();
         FundamentalDiagramSet fds = scenario.getFundamentalDiagramSet();
 
         // construct solver
-        LPBuilder lpbuilder = new LPBuilder(network,fds,actuators,numtime);
+        int num_time = 10;
+        LPBuilder lpbuilder = new LPBuilder(network,fds,actuators,num_time);
 
         // dynamic information
         DemandSet demand_set = scenario.getDemandSet();
-        SplitRatioSet splitratios = scenario.getSplitRatioSet();
+        SplitRatioSet split_ratios = scenario.getSplitRatioSet();
         InitialDensitySet ic = scenario.getInitialDensitySet();
 
         // solve
-        lpbuilder.problemA(ic,demand_set,splitratios);
-
+        lpbuilder.compute_optimal_metering(ic, demand_set, split_ratios);
 
     }
 }

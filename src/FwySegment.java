@@ -20,7 +20,7 @@ public class FwySegment {
     // fundamental diagram
     protected double vf;
     protected double w;
-    protected double F;
+    protected double f_max;
     protected double n_max;
 
     // initial condition
@@ -55,7 +55,7 @@ public class FwySegment {
         this.fr_link = fr_link;
 
         // fundamental diagram
-        F = fd.getCapacity();
+        f_max = fd.getCapacity();
         vf= fd.getFreeFlowSpeed();
         w = fd.getCongestionSpeed();
         n_max = fd.getJamDensity();
@@ -121,7 +121,6 @@ public class FwySegment {
     // Override
     ///////////////////////////////////////////////////////////////////
 
-
     @Override
     public String toString() {
         return String.format("%s\t%s\t%s",ml_link==null?"-":ml_link.getId(),
@@ -129,6 +128,5 @@ public class FwySegment {
                                           fr_link==null?"-":fr_link.getId());
 
     }
-
 
 }

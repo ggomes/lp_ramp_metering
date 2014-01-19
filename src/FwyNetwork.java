@@ -30,7 +30,6 @@ public class FwyNetwork {
             segments.add(new FwySegment(link,onramp,offramp,fd,actuator));
             link = next_freeway_link(link);
         }
-
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -166,6 +165,5 @@ public class FwyNetwork {
             str = str.concat(String.format("%s\n",s.toString()));
         }
         return str;
-
     }
 }
