@@ -154,11 +154,11 @@ public class LPBuilder {
         Problem L = new Problem();
         L.setObjective(J, OptType.MIN);
 
-        // RHS
         for(i=0;i<I;i++){
+
             FwySegment seg = fwy.getSegments().get(i);
 
-            /* ml conservation
+            /* RHS: ml conservation
                for each i in 0...I-1, k in 0...K-1
                     {k>0}  {k==0}
                LHS =  0  + n[i][0]
@@ -168,20 +168,19 @@ public class LPBuilder {
                 L.add(seg.lhs_MLcons.get(k),"=",rhs);
             }
 
-            /* or conservation
+            /* RHS: or conservation
                for each metered i in 0...I-1, k in 0...K-1
                      {always}  {k==0}
                LHS = d[i][k] + l[i][0]
              */
-            if(seg.is_metered){
+            if(seg.is_metered)
                 for(k=0;k<K;k++){
                     rhs = seg.d(k);
                     rhs += k==0 ? seg.lo : 0;
                     L.add(seg.lhs_ORcons.get(k),"=",rhs);
                 }
-            }
 
-            /* ml flow freeflow
+            /* RHS: ml flow freeflow
                for each i in 0...I-1, k in 0...K-1
                                 {k==0}                      {!metered}
                LHS <= betabar[i][0]*v[i]*n[i][0] + betabar[i][k]*v[i]*gamma*d[i][k]
@@ -192,7 +191,7 @@ public class LPBuilder {
                 L.add(seg.lhs_MLffw.get(0),"<=",rhs);
             }
 
-            /* ml flow congestion
+            /* RHS: ml flow congestion
                for each i in 0...I-2, k in 0...K-1
                          {always}              {k=0}             {!metered}
                LHS <= w[i+1]*njam[i+1] - w[i+1]*n[i+1][0] - w[i+1]*gamma*d[i+1][k]
@@ -207,7 +206,7 @@ public class LPBuilder {
                 }
             }
 
-            /* or flow demand
+            /* RHS: or flow demand
                for each metered i in 0...I-1, k in 0...K-1
                       {always}
                LHS <= d[i][k]
@@ -216,42 +215,36 @@ public class LPBuilder {
                 for(k=0;k<K;k++)
                     L.add(seg.lhs_ORdem.get(k),"<=",seg.d(k));
 
-        }
-
-        // bounds
-        for(i=0;i<I;i++){
-            FwySegment seg = fwy.getSegments().get(i);
-
-            for(k=0;k<K;k++){
-
-                /* mainline capacity
-                   for each i in 0...I-1, k in 0...K-1
-                   f[i][k] <= f_max[i]
-                */
+            /* BOUND: mainline capacity
+               for each i in 0...I-1, k in 0...K-1
+               f[i][k] <= f_max[i]
+             */
+            for(k=0;k<K;k++)
                 L.setVarUpperBound(getVar("f",i,k),seg.f_max);
 
-                if(seg.is_metered){
-
-                    /* queue length limit
-                       for each metered i in 0...I-1, k in 0...K-1
-                       l[i][k] <= lmax[i]
-                     */
+            /* BOUND: queue length limit
+               for each metered i in 0...I-1, k in 0...K-1
+               l[i][k] <= lmax[i]
+             */
+            if(seg.is_metered)
+                for(k=0;k<K;k++)
                     L.setVarUpperBound(getVar("l",i,k+1),seg.l_max);
 
-                    /* onramp flow positivity
-                       for each metered i in 0...I-1, k in 0...K-1
-                       r[i][k] >= 0
-                     */
-
+            /* BOUND: onramp flow positivity
+               for each metered i in 0...I-1, k in 0...K-1
+               r[i][k] >= 0
+             */
+            if(seg.is_metered)
+                for(k=0;k<K;k++)
                     L.setVarLowerBound(getVar("r",i,k),0);
 
-                    /* maximum metering rate
-                       for each metered i in 0...I-1, k in 0...K-1
-                       r[i][k] <= rmax[i]
-                     */
+            /* BOUND: maximum metering rate
+               for each metered i in 0...I-1, k in 0...K-1
+               r[i][k] <= rmax[i]
+             */
+            if(seg.is_metered)
+                for(k=0;k<K;k++)
                     L.setVarUpperBound(getVar("r", i, k), seg.r_max);
-                }
-            }
         }
 
         // solve
