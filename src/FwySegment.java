@@ -1,10 +1,12 @@
 import edu.berkeley.path.beats.jaxb.Actuator;
+import edu.berkeley.path.beats.jaxb.Demand;
 import edu.berkeley.path.beats.jaxb.FundamentalDiagram;
 import edu.berkeley.path.beats.jaxb.Link;
 import edu.berkeley.path.beats.simulator.Parameters;
 import net.sf.javailp.Linear;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -40,8 +42,8 @@ public class FwySegment {
     protected List<Linear> lhs_ORdem = new ArrayList<Linear>();
 
     // data profiles
-//    private double [] demand_profile;
-//    private double [] split_ratio_profile;
+    protected ArrayList<Double> demand_profile;
+    protected ArrayList<Double> split_ratio_profile;
 
     ///////////////////////////////////////////////////////////////////
     // construction
@@ -115,6 +117,28 @@ public class FwySegment {
 
     public double betabar(int k){
         return Double.NaN;
+    }
+
+    ///////////////////////////////////////////////////////////////////
+    // set
+    ///////////////////////////////////////////////////////////////////
+
+    protected void reset_state(){
+        this.no = 0d;
+        this.lo = 0d;
+    }
+
+    protected void reset_demands(){
+        demand_profile = new ArrayList<Double>();
+    }
+
+    protected void reset_split_ratios(){
+        split_ratio_profile = new ArrayList<Double>();
+    }
+
+    protected void add_demands(String str,double dt){
+
+
     }
 
     ///////////////////////////////////////////////////////////////////

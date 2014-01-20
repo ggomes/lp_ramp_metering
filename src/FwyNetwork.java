@@ -3,6 +3,7 @@ import edu.berkeley.path.beats.simulator.Link;
 import edu.berkeley.path.beats.simulator.Node;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -11,9 +12,9 @@ import java.util.List;
 public class FwyNetwork {
 
     protected ArrayList<FwySegment> segments;
-    protected ArrayList<Long> ml_id;
-    protected ArrayList<Long> or_id;
-    protected ArrayList<Long> fr_id;
+    protected ArrayList<Long> ml_link_id;
+    protected ArrayList<Long> or_source_id;
+    protected ArrayList<Long> fr_node_id;
 
     ///////////////////////////////////////////////////////////////////
     // construction
@@ -22,21 +23,22 @@ public class FwyNetwork {
     public FwyNetwork(Network network,FundamentalDiagramSet fds,ActuatorSet actuatorset){
 
         segments = new ArrayList<FwySegment>();
-        ml_id = new ArrayList<Long>();
-        or_id = new ArrayList<Long>();
-        fr_id = new ArrayList<Long>();
+        ml_link_id = new ArrayList<Long>();
+        or_source_id = new ArrayList<Long>();
+        fr_node_id = new ArrayList<Long>();
 
         // find first mainline link, iterate downstream until you reach the end
         Link link = find_first_fwy_link(network);
         while(link!=null){
-            Link onramp = start_node_onramp(link);
+            Link onramp = start_node_onramp_or_source(link);
             Link offramp = end_node_offramp(link);
             FundamentalDiagram fd = get_fd_for_link(link,fds);
             Actuator actuator = get_onramp_actuator(onramp,actuatorset);
             segments.add(new FwySegment(link,onramp,offramp,fd,actuator));
-            ml_id.add(link.getId());
-            or_id.add(onramp==null?null:onramp.getId());
-            fr_id.add(offramp==null?null:offramp.getId());
+            ml_link_id.add(link.getId());
+            Link onramp_source = get_onramp_source(onramp);
+            or_source_id.add(onramp_source==null?null:onramp_source.getId());
+            fr_node_id.add(offramp==null?null:offramp.getBegin_node().getId());
             link = next_freeway_link(link);
         }
     }
@@ -60,17 +62,16 @@ public class FwyNetwork {
             return null;
         }
 
-        // gather links that are freeway sources, or sources the end in simple nodes
+        // gather links that are freeway sources, or sources that end in simple nodes
         List<Link> first_fwy_list = new ArrayList<Link>();
         for(edu.berkeley.path.beats.jaxb.Link jlink : network.getLinkList().getLink()){
             Link link = (Link) jlink;
             Node end_node = link.getEnd_node();
-            boolean end_node_is_simple = end_node.getnIn()<=1 && end_node.getnOut()<=1;
-            boolean is_or_source = end_node_is_simple
-                    && end_node.getOutput_link().length>0
-                    && isOnramp(end_node.getOutput_link()[0]);
+            boolean supplies_onramp = end_node.getnIn()==1
+                               && end_node.getnOut()==1
+                               && isOnrampType(end_node.getOutput_link()[0]);
             if(link.isSource())
-                if( isFreeway(link) || !is_or_source)
+                if( isFreewayType(link) || !supplies_onramp)
                     first_fwy_list.add(link);
         }
 
@@ -85,13 +86,19 @@ public class FwyNetwork {
             return null;
         }
 
-        return first_fwy_list.get(0);
+        Link first_fwy = first_fwy_list.get(0);
+
+        // if it is a source type link, use next
+        if(isSourceType(first_fwy))
+            first_fwy = first_fwy.getEnd_node().getOutput_link()[0];
+
+        return first_fwy;
     }
 
     private boolean all_are_fwy_or_fr_src_snk(Network network){
         for(edu.berkeley.path.beats.jaxb.Link jlink : network.getLinkList().getLink()){
             Link link = (Link) jlink;
-            if(!isFreeway(link) && !isOnramp(link) && !isOfframp(link) && !isSource(link) && !isSink(link))
+            if(!isFreewayType(link) && !isOnrampType(link) && !isOfframpType(link) && !isSource(link) && !isSinkType(link))
                 return false;
         }
         return true;
@@ -99,43 +106,48 @@ public class FwyNetwork {
 
     private Link end_node_offramp(Link link){
         for(Link olink : link.getEnd_node().getOutput_link()){
-            if(isOfframp(olink))
+            if(isOfframpType(olink))
                 return olink;
         }
         return null;
     }
 
-    private boolean isFreeway(Link link){
-        return link.getLinkType().getName().compareToIgnoreCase("freeway")==0;
-    }
-
-    private boolean isOnramp(Link link){
-        return link.getLinkType().getName().compareToIgnoreCase("on-ramp")==0;
-    }
-
-    private boolean isOfframp(Link link){
-        return link.getLinkType().getName().compareToIgnoreCase("off-ramp")==0;
-    }
 
     private boolean isSource(Link link){
+        return link.getBegin_node().getInput_link().length==0;
+    }
+
+    private boolean isSourceType(Link link){
         return link.getLinkType().getName().compareToIgnoreCase("source")==0;
     }
 
-    private boolean isSink(Link link){
+    private boolean isFreewayType(Link link){
+        return link.getLinkType().getName().compareToIgnoreCase("freeway")==0;
+    }
+
+    private boolean isOfframpType(Link link){
+        return link.getLinkType().getName().compareToIgnoreCase("off-ramp")==0;
+    }
+
+    private boolean isOnrampType(Link link){
+        return link.getLinkType().getName().compareToIgnoreCase("on-ramp")==0;
+    }
+
+    private boolean isSinkType(Link link){
         return link.getLinkType().getName().compareToIgnoreCase("sink")==0;
     }
 
     private Link next_freeway_link(Link link){
         for(Link olink : link.getEnd_node().getOutput_link()){
-            if(isFreeway(olink))
+            if(isFreewayType(olink))
                 return olink;
         }
         return null;
     }
 
-    private Link start_node_onramp(Link link){
+    private Link start_node_onramp_or_source(Link link){
         for(Link ilink : link.getBegin_node().getInput_link()){
-            if(isOnramp(ilink))
+            if(isOnrampType(ilink) || isSource(ilink))
                 return ilink;
         }
         return null;
@@ -163,23 +175,61 @@ public class FwyNetwork {
         return null;
     }
 
+    private Link get_onramp_source(Link link){
+        Link rlink = link;
+        while(rlink!=null && !isSource(rlink)){
+            Node node = rlink.getBegin_node();
+            rlink = node.getnIn()==1 ? node.getInput_link()[0] : null;
+        }
+        return rlink;
+    }
+
     ///////////////////////////////////////////////////////////////////
     // set
     ///////////////////////////////////////////////////////////////////
 
     protected void set_ic(InitialDensitySet ic){
 
+        int index;
 
-        //ic.getDensity().get(0).getLinkId()
+        // reset everything to zero
+        for(FwySegment seg : segments)
+            seg.reset_state();
 
+        if(ic==null)
+            return;
+
+        // distribute initial condition to segments
+        for(Density D : ic.getDensity()){
+            index = ml_link_id.indexOf(D.getLinkId());
+            if(index>=0)
+                segments.get(index).no += Double.parseDouble(D.getContent());
+        }
     }
 
     protected void set_demands(DemandSet demand_set){
-        //demand_set.getDemandProfile()
+
+        int index;
+
+        // reset everything to zero
+        for(FwySegment seg : segments)
+            seg.reset_demands();
+
+        for(DemandProfile dp : demand_set.getDemandProfile()){
+            index = or_source_id.indexOf(dp.getLinkIdOrg());
+            if(index>=0)
+                for(Demand d:dp.getDemand())
+                    for(String str : Arrays.asList(d.getContent().split(",")))
+                        segments.get(index).demand_profile.add(Double.parseDouble(str));
+        }
 
     }
-    protected void set_split_ratios(SplitRatioSet split_ratios){
+    protected void set_split_ratios(SplitRatioSet srs){
         //split_ratios.getSplitRatioProfile()
+        for(SplitRatioProfile srp : srs.getSplitRatioProfile()){
+//            srp.getNodeId()
+//            fr_node_id
+        }
 
     }
 
