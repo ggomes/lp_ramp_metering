@@ -21,11 +21,11 @@ public class LPBuilder {
 
         int i,k;
 
-        this.K = K;
-        this.I = fwy.getSegments().size();
-
         // Make the freeway structure
         fwy = new FwyNetwork(network,fds,actuators);
+
+        this.K = K;
+        this.I = fwy.getSegments().size();
 
         /* objective function:
            sum_[I][K] n[i][k] + sum_[I][K] l[i][k] - eta sum_[I][K] f[i][k] - eta sum[I][K] r[i][k]
@@ -146,14 +146,21 @@ public class LPBuilder {
     // solve problem
     ///////////////////////////////////////////////////////////////////
 
-    public void compute_optimal_metering(InitialDensitySet ic, DemandSet demand_set, SplitRatioSet splitratios){
+    public void compute_optimal_metering(InitialDensitySet ic, DemandSet demand_set, SplitRatioSet split_ratios){
 
         int i,k;
         double rhs;
 
+        // copy input to fwy structure
+        fwy.set_ic(ic);
+        fwy.set_demands(demand_set);
+        fwy.set_split_ratios(split_ratios);
+
+        // generate problem, assign objective function
         Problem L = new Problem();
         L.setObjective(J, OptType.MIN);
 
+        // add constraints for each segment
         for(i=0;i<I;i++){
 
             FwySegment seg = fwy.getSegments().get(i);

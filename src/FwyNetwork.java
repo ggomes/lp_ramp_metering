@@ -10,7 +10,10 @@ import java.util.List;
  */
 public class FwyNetwork {
 
-    private List<FwySegment> segments;
+    protected ArrayList<FwySegment> segments;
+    protected ArrayList<Long> ml_id;
+    protected ArrayList<Long> or_id;
+    protected ArrayList<Long> fr_id;
 
     ///////////////////////////////////////////////////////////////////
     // construction
@@ -19,6 +22,9 @@ public class FwyNetwork {
     public FwyNetwork(Network network,FundamentalDiagramSet fds,ActuatorSet actuatorset){
 
         segments = new ArrayList<FwySegment>();
+        ml_id = new ArrayList<Long>();
+        or_id = new ArrayList<Long>();
+        fr_id = new ArrayList<Long>();
 
         // find first mainline link, iterate downstream until you reach the end
         Link link = find_first_fwy_link(network);
@@ -28,6 +34,9 @@ public class FwyNetwork {
             FundamentalDiagram fd = get_fd_for_link(link,fds);
             Actuator actuator = get_onramp_actuator(onramp,actuatorset);
             segments.add(new FwySegment(link,onramp,offramp,fd,actuator));
+            ml_id.add(link.getId());
+            or_id.add(onramp==null?null:onramp.getId());
+            fr_id.add(offramp==null?null:offramp.getId());
             link = next_freeway_link(link);
         }
     }
@@ -152,6 +161,26 @@ public class FwyNetwork {
                 return actuator;
         }
         return null;
+    }
+
+    ///////////////////////////////////////////////////////////////////
+    // set
+    ///////////////////////////////////////////////////////////////////
+
+    protected void set_ic(InitialDensitySet ic){
+
+
+        //ic.getDensity().get(0).getLinkId()
+
+    }
+
+    protected void set_demands(DemandSet demand_set){
+        //demand_set.getDemandProfile()
+
+    }
+    protected void set_split_ratios(SplitRatioSet split_ratios){
+        //split_ratios.getSplitRatioProfile()
+
     }
 
     ///////////////////////////////////////////////////////////////////
