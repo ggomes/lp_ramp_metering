@@ -13,6 +13,7 @@ public class FwyNetwork {
 
     protected ArrayList<FwySegment> segments;
     protected ArrayList<Long> ml_link_id;
+    protected ArrayList<Long> fr_link_id;
     protected ArrayList<Long> or_source_id;
     protected ArrayList<Long> fr_node_id;
 
@@ -24,6 +25,7 @@ public class FwyNetwork {
 
         segments = new ArrayList<FwySegment>();
         ml_link_id = new ArrayList<Long>();
+        fr_link_id = new ArrayList<Long>();
         or_source_id = new ArrayList<Long>();
         fr_node_id = new ArrayList<Long>();
 
@@ -38,9 +40,11 @@ public class FwyNetwork {
             ml_link_id.add(link.getId());
             Link onramp_source = get_onramp_source(onramp);
             or_source_id.add(onramp_source==null?null:onramp_source.getId());
+            fr_link_id.add(offramp==null?null:offramp.getId());
             fr_node_id.add(offramp==null?null:offramp.getBegin_node().getId());
             link = next_freeway_link(link);
         }
+
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -190,8 +194,6 @@ public class FwyNetwork {
 
     protected void set_ic(InitialDensitySet ic){
 
-        int index;
-
         // reset everything to zero
         for(FwySegment seg : segments)
             seg.reset_state();
@@ -201,36 +203,91 @@ public class FwyNetwork {
 
         // distribute initial condition to segments
         for(Density D : ic.getDensity()){
-            index = ml_link_id.indexOf(D.getLinkId());
+            int index = ml_link_id.indexOf(D.getLinkId());
             if(index>=0)
                 segments.get(index).no += Double.parseDouble(D.getContent());
         }
     }
 
-    protected void set_demands(DemandSet demand_set){
-
-        int index;
+    protected void set_demands(DemandSet demand_set,double sim_dt,int numT){
 
         // reset everything to zero
         for(FwySegment seg : segments)
             seg.reset_demands();
 
         for(DemandProfile dp : demand_set.getDemandProfile()){
-            index = or_source_id.indexOf(dp.getLinkIdOrg());
-            if(index>=0)
-                for(Demand d:dp.getDemand())
-                    for(String str : Arrays.asList(d.getContent().split(",")))
-                        segments.get(index).demand_profile.add(Double.parseDouble(str));
+            int index = or_source_id.indexOf(dp.getLinkIdOrg());
+            if(index>=0){
+                ArrayList<Double> demand = new ArrayList<Double>();
+                if(dp.getDemand()!=null){
+                    for(Demand d:dp.getDemand()){
+                        List<String> strlist = Arrays.asList(d.getContent().split(","));
+                        if(demand.isEmpty())
+                            for(int i=0;i<strlist.size();i++)
+                                demand.add(0d);
+                        for(int i=0;i<strlist.size();i++)
+                            demand.set(i,demand.get(i)+Double.parseDouble(strlist.get(i)));
+                    }
+                }
+                segments.get(index).demand_profile = sample(demand,dp.getDt(),sim_dt,numT);
+            }
         }
 
     }
-    protected void set_split_ratios(SplitRatioSet srs){
-        //split_ratios.getSplitRatioProfile()
+
+    protected void set_split_ratios(SplitRatioSet srs,double sim_dt,int numT){
+        int index;
+
         for(SplitRatioProfile srp : srs.getSplitRatioProfile()){
-//            srp.getNodeId()
-//            fr_node_id
+            index = fr_node_id.indexOf(srp.getNodeId());
+            if(index>=0){
+                ArrayList<Double> ml_split = new ArrayList<Double>();
+                ArrayList<Double> fr_split = new ArrayList<Double>();
+                for(Splitratio sr : srp.getSplitratio()){
+                    if(sr.getLinkIn()==ml_link_id.get(index)){
+                        if(sr.getLinkOut()==fr_link_id.get(index)){
+                            for(String str : Arrays.asList(sr.getContent().split(",")))
+                                fr_split.add(Double.parseDouble(str));
+                        } else if(index<ml_link_id.size()-1 && sr.getLinkOut()==ml_link_id.get(index+1)){
+                            for(String str : Arrays.asList(sr.getContent().split(",")))
+                                ml_split.add(Double.parseDouble(str));
+                        } else {
+                            System.out.println("ERROR!");
+                        }
+                    }
+                    else{
+                        System.out.println("ERROR!");
+                    }
+                }
+                if(fr_split.isEmpty() && !ml_split.isEmpty())
+                    for(Double d : ml_split)
+                        fr_split.add(1-d);
+                segments.get(index).split_ratio_profile = sample(fr_split,srp.getDt(),sim_dt,numT);
+            }
+        }
+    }
+
+    private static ArrayList<Double> sample(ArrayList<Double> in,double in_dt,double out_dt,int K_out){
+
+        int k_in,k_out;
+        ArrayList<Double> out = new ArrayList<Double>();
+
+        // edge cases
+        if(in==null)
+            return null;
+        if(in.isEmpty()){
+            for(k_out=0;k_out<K_out;k_out++)
+                out.add(0d);
+            return out;
         }
 
+        // normal case
+        for(k_out=0;k_out<K_out;k_out++){
+            k_in = (int) Math.floor(((double)k_out)*out_dt/in_dt);
+            k_in = Math.min(k_in,in.size()-1);
+            out.add(in.get(k_in));
+        }
+        return out;
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -240,9 +297,8 @@ public class FwyNetwork {
     @Override
     public String toString() {
         String str = "";
-        for(FwySegment s : this.segments){
-            str = str.concat(String.format("%s\n",s.toString()));
-        }
+        for(int i=0;i<segments.size();i++)
+            str = str.concat(String.format("%d) ----------------------------\n%s",i,segments.get(i).toString()));
         return str;
     }
 }

@@ -7,6 +7,7 @@ import net.sf.javailp.*;
 public class LPBuilder {
 
     private FwyNetwork fwy;
+    private double dt;                  // time step in seconds
     private int K;                      // number of time steps
     private int I;                      // number of segments
     private double eta = 1.0;           // J = TVH - eta*TVM
@@ -17,7 +18,7 @@ public class LPBuilder {
     // construction
     ///////////////////////////////////////////////////////////////////
 
-    public LPBuilder(Network network,FundamentalDiagramSet fds,ActuatorSet actuators,int K){
+    public LPBuilder(Network network,FundamentalDiagramSet fds,ActuatorSet actuators,int K,double dt){
 
         int i,k;
 
@@ -25,6 +26,7 @@ public class LPBuilder {
         fwy = new FwyNetwork(network,fds,actuators);
 
         this.K = K;
+        this.dt = dt;
         this.I = fwy.getSegments().size();
 
         /* objective function:
@@ -153,8 +155,10 @@ public class LPBuilder {
 
         // copy input to fwy structure
         fwy.set_ic(ic);
-        fwy.set_demands(demand_set);
-        fwy.set_split_ratios(split_ratios);
+        fwy.set_demands(demand_set,dt,K);
+        fwy.set_split_ratios(split_ratios,dt,K);
+
+        System.out.println(fwy.toString());
 
         // generate problem, assign objective function
         Problem L = new Problem();

@@ -22,12 +22,13 @@ public class Runner {
 
         // constant information
         Network network = scenario.getNetworkSet().getNetwork().get(0);
+        double dt = 5d;
         ActuatorSet actuators = scenario.getActuatorSet();
         FundamentalDiagramSet fds = scenario.getFundamentalDiagramSet();
 
         // construct solver
-        int num_time = 10;
-        LPBuilder lpbuilder = new LPBuilder(network,fds,actuators,num_time);
+        int num_time = 15;
+        LPBuilder lpbuilder = new LPBuilder(network,fds,actuators,num_time,dt);
 
         // dynamic information
         DemandSet demand_set = scenario.getDemandSet();

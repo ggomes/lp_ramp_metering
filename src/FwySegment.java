@@ -1,12 +1,8 @@
-import edu.berkeley.path.beats.jaxb.Actuator;
-import edu.berkeley.path.beats.jaxb.Demand;
-import edu.berkeley.path.beats.jaxb.FundamentalDiagram;
-import edu.berkeley.path.beats.jaxb.Link;
+import edu.berkeley.path.beats.jaxb.*;
 import edu.berkeley.path.beats.simulator.Parameters;
 import net.sf.javailp.Linear;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -15,9 +11,10 @@ import java.util.List;
 public class FwySegment {
 
     // link references
-    protected Link ml_link;
-    protected Link or_link;
-    protected Link fr_link;
+    protected Long ml_link_id;
+    protected Long or_link_id;
+    protected Long fr_link_id;
+    protected Long fr_node_id;
 
     // fundamental diagram
     protected double vf;
@@ -52,9 +49,10 @@ public class FwySegment {
     public FwySegment(Link ml_link,Link or_link,Link fr_link,FundamentalDiagram fd,Actuator actuator){
 
         // link references
-        this.ml_link = ml_link;
-        this.or_link = or_link;
-        this.fr_link = fr_link;
+        this.ml_link_id = ml_link==null?null:ml_link.getId();
+        this.or_link_id = or_link==null?null:or_link.getId();
+        this.fr_link_id = fr_link==null?null:fr_link.getId();
+        this.fr_node_id = fr_link==null?null: fr_link.getBegin().getNodeId();
 
         // fundamental diagram
         f_max = fd.getCapacity();
@@ -88,27 +86,15 @@ public class FwySegment {
     ///////////////////////////////////////////////////////////////////
 
     public boolean hasML(){
-        return ml_link!=null;
+        return ml_link_id!=null;
     }
 
     public boolean hasOR(){
-        return or_link!=null;
+        return or_link_id!=null;
     }
 
     public boolean hasFR(){
-        return fr_link!=null;
-    }
-
-    public Long getMLid(){
-        return hasML() ?  ml_link.getId() : null;
-    }
-
-    public Long getORid(){
-        return hasOR() ?  or_link.getId() : null;
-    }
-
-    public Long getFRid(){
-        return hasFR() ?  fr_link.getId() : null;
+        return fr_link_id!=null;
     }
 
     public double d(int k){
@@ -147,10 +133,31 @@ public class FwySegment {
 
     @Override
     public String toString() {
-        return String.format("%s\t%s\t%s",ml_link==null?"-":ml_link.getId(),
-                                          or_link==null?"-":or_link.getId(),
-                                          fr_link==null?"-":fr_link.getId());
 
+        return String.format(  "ml_link_id=%s\n" +
+                               "or_link_id=%s\n" +
+                               "fr_link_id=%s\n" +
+                               "fr_node_id=%s\n" +
+                               "vf=%.1f\n" +
+                               "w=%.1f\n" +
+                               "f_max=%.1f\n" +
+                               "n_max=%.1f\n" +
+                               "no=%.1f\n" +
+                               "lo=%.1f\n" +
+                               "is_metered=%s\n"+
+                               "l_max=%.1f\n"+
+                               "r_max=%.1f\n"+
+                               "dem=%s\n"+
+                               "beta=%s\n",
+                                ml_link_id,
+                                or_link_id,
+                                fr_link_id,
+                                fr_node_id,
+                                vf,w,f_max,n_max,no,lo,
+                                is_metered,l_max,r_max,
+                                demand_profile==null?"[]":demand_profile.toString(),
+                                split_ratio_profile==null?"[]":split_ratio_profile.toString()
+                );
     }
 
 }
