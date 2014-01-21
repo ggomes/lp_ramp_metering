@@ -1,6 +1,8 @@
 import edu.berkeley.path.beats.jaxb.*;
 import net.sf.javailp.*;
 
+import java.io.PrintWriter;
+
 /**
  * Ramp metering with linear programming
  */
@@ -18,7 +20,7 @@ public class LPBuilder {
     // construction
     ///////////////////////////////////////////////////////////////////
 
-    public LPBuilder(Network network,FundamentalDiagramSet fds,ActuatorSet actuators,int K,double dt){
+    public LPBuilder(Network network,FundamentalDiagramSet fds,ActuatorSet actuators,int K,double dt) throws Exception{
 
         int i,k;
 
@@ -148,7 +150,7 @@ public class LPBuilder {
     // solve problem
     ///////////////////////////////////////////////////////////////////
 
-    public void compute_optimal_metering(InitialDensitySet ic, DemandSet demand_set, SplitRatioSet split_ratios){
+    public void compute_optimal_metering(InitialDensitySet ic, DemandSet demand_set, SplitRatioSet split_ratios) throws Exception {
 
         int i,k;
         double rhs;
@@ -157,8 +159,6 @@ public class LPBuilder {
         fwy.set_ic(ic);
         fwy.set_demands(demand_set,dt,K);
         fwy.set_split_ratios(split_ratios,dt,K);
-
-        System.out.println(fwy.toString());
 
         // generate problem, assign objective function
         Problem L = new Problem();
@@ -257,6 +257,10 @@ public class LPBuilder {
                 for(k=0;k<K;k++)
                     L.setVarUpperBound(getVar("r", i, k), seg.r_max);
         }
+
+        PrintWriter out = new PrintWriter("C:\\Users\\gomes\\Desktop\\aaa.txt");
+        out.print(L.toString());
+        out.close();;
 
         // solve
         SolverFactory factory = new SolverFactoryLpSolve(); // use lp_solve

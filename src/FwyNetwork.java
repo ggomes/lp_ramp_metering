@@ -21,7 +21,7 @@ public class FwyNetwork {
     // construction
     ///////////////////////////////////////////////////////////////////
 
-    public FwyNetwork(Network network,FundamentalDiagramSet fds,ActuatorSet actuatorset){
+    public FwyNetwork(Network network,FundamentalDiagramSet fds,ActuatorSet actuatorset) throws Exception{
 
         segments = new ArrayList<FwySegment>();
         ml_link_id = new ArrayList<Long>();
@@ -59,12 +59,10 @@ public class FwyNetwork {
     // private
     ///////////////////////////////////////////////////////////////////
 
-    private Link find_first_fwy_link(Network network){
+    private Link find_first_fwy_link(Network network) throws Exception{
 
-        if(!all_are_fwy_or_fr_src_snk(network)){
-            System.out.println("Not all links are freeway, onramp, offramps, sources, or sinks");
-            return null;
-        }
+        if(!all_are_fwy_or_fr_src_snk(network))
+            throw new Exception("Not all links are freeway, onramp, offramps, sources, or sinks");
 
         // gather links that are freeway sources, or sources that end in simple nodes
         List<Link> first_fwy_list = new ArrayList<Link>();
@@ -80,15 +78,11 @@ public class FwyNetwork {
         }
 
         // there must be exactly one of these
-        if(first_fwy_list.isEmpty()){
-            System.out.println("NO FIRST FWY LINK");
-            return null;
-        }
+        if(first_fwy_list.isEmpty())
+            throw new Exception("NO FIRST FWY LINK");
 
-        if(first_fwy_list.size()>1){
-            System.out.println("MULTIPLE FIRST FWY LINKS");
-            return null;
-        }
+        if(first_fwy_list.size()>1)
+            throw new Exception("MULTIPLE FIRST FWY LINKS");
 
         Link first_fwy = first_fwy_list.get(0);
 
@@ -235,7 +229,7 @@ public class FwyNetwork {
 
     }
 
-    protected void set_split_ratios(SplitRatioSet srs,double sim_dt,int numT){
+    protected void set_split_ratios(SplitRatioSet srs,double sim_dt,int numT) throws Exception{
         int index;
 
         for(SplitRatioProfile srp : srs.getSplitRatioProfile()){
@@ -251,13 +245,11 @@ public class FwyNetwork {
                         } else if(index<ml_link_id.size()-1 && sr.getLinkOut()==ml_link_id.get(index+1)){
                             for(String str : Arrays.asList(sr.getContent().split(",")))
                                 ml_split.add(Double.parseDouble(str));
-                        } else {
-                            System.out.println("ERROR!");
-                        }
+                        } else
+                            throw new Exception("ERROR!");
                     }
-                    else{
-                        System.out.println("ERROR!");
-                    }
+                    else
+                        throw new Exception("ERROR!");
                 }
                 if(fr_split.isEmpty() && !ml_split.isEmpty())
                     for(Double d : ml_split)
