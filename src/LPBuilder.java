@@ -32,7 +32,7 @@ public class LPBuilder {
         this.I = fwy.getSegments().size();
 
         /* objective function:
-           sum_[I][K] n[i][k] + sum_[I][K] l[i][k] - eta sum_[I][K] f[i][k] - eta sum[I][K] r[i][k]
+           sum_[I][K] n[i][k] + sum_[Im][K] l[i][k] - eta sum_[I][K] f[i][k] - eta sum[Im][K] r[i][k]
          */
         for(i=0;i<I;i++){
             FwySegment seg = fwy.getSegments().get(i);
@@ -40,34 +40,11 @@ public class LPBuilder {
                 J.add( 1.0,getVar("n",i,k+1));
                 J.add(-eta,getVar("f",i,k  ));
             }
-            if(seg.hasOR()){
+            if(seg.is_metered)
                 for(k=0;k<K;k++){
                     J.add( 1.0,getVar("l",i,k+1));
                     J.add(-eta,getVar("r",i,k  ));
                 }
-            }
-        }
-
-        /* mainline conservation (LHS)
-           for each i in 0...I-1, k in 0...K-1
-            {always}    {k>0}     {i>0}   {metered}       {betabar[i][k]>0}
-           n[i][k+1] -n[i][k] -f[i-1][k]  -r[i][k] +inv(betabar[i][k])*f[i][k]
-         */
-        for(i=0;i<I;i++){
-            FwySegment seg = fwy.getSegments().get(i);
-            for(k=0;k<K;k++){
-                Linear C = new Linear();
-                C.add(+1d,getVar("n",i,k+1));
-                if(k>0)
-                    C.add(-1d,getVar("n",i,k));
-                if(i>0)
-                    C.add(-1d,getVar("f",i-1,k));
-                if(seg.is_metered)
-                    C.add(-1d,getVar("r",i,k));
-                if(seg.betabar(k)!=0d)
-                    C.add(+1/seg.betabar(k),getVar("f",i,k));
-                seg.lhs_MLcons.add(C);
-            }
         }
 
         /* onramp conservation
@@ -84,28 +61,8 @@ public class LPBuilder {
                     if(k>0)
                         C.add(-1d,getVar("l",i,k));
                     C.add(+1d,getVar("r",i,k));
-                    seg.lhs_ORcons.add(C);
+                    seg.ORcons.add(C);
                 }
-            }
-        }
-
-        /* mainline flows - freeflow
-           for each i in 0...I-1, k in 0...K-1
-           {always}           {k>0}                       {metered}
-           f[i][k] -betabar[i][k]*v[i]*n[i][k] - betabar[i][k]*v[i]*gamma*r[i][k]
-         */
-        for(i=0;i<I;i++){
-            FwySegment seg = fwy.getSegments().get(i);
-            for(k=0;k<K;k++){
-                Linear C = new Linear();
-                C.add(+1d,getVar("f",i,k));
-                if(seg.betabar(k)>0){
-                    if(k>0)
-                        C.add(-seg.betabar(k)*seg.vf,getVar("n",i,k));
-                    if(seg.is_metered)
-                        C.add(-seg.betabar(k)*seg.vf*gamma,getVar("r",i,k));
-                }
-                seg.lhs_MLffw.add(C);
             }
         }
 
@@ -121,10 +78,10 @@ public class LPBuilder {
                 Linear C = new Linear();
                 C.add(+1d,getVar("f",i,k));
                 if(k>0)
-                    C.add(seg.w,getVar("n",i+1,k));
+                    C.add(next_seg.w,getVar("n",i+1,k));
                 if(next_seg.is_metered)
-                    C.add(seg.w*gamma,getVar("r",i+1,k));
-                seg.lhs_MLcng.add(C);
+                    C.add(next_seg.w*gamma,getVar("r",i+1,k));
+                seg.MLcng.add(C);
             }
         }
 
@@ -139,8 +96,9 @@ public class LPBuilder {
                 for(k=0;k<K;k++){
                     Linear C = new Linear();
                     C.add(+1d,getVar("r",i,k));
-                    C.add(-1d,getVar("l",i,k));
-                    seg.lhs_ORdem.add(C);
+                    if(k>0)
+                        C.add(-1d,getVar("l",i,k));
+                    seg.ORdem.add(C);
                 }
             }
         }
@@ -164,19 +122,40 @@ public class LPBuilder {
         Problem L = new Problem();
         L.setObjective(J, OptType.MIN);
 
-        // add constraints for each segment
+        // assign rhs, add constraints for each segment
         for(i=0;i<I;i++){
 
             FwySegment seg = fwy.getSegments().get(i);
 
-            /* RHS: ml conservation
+
+            /* mainline conservation (LHS)
                for each i in 0...I-1, k in 0...K-1
+                {always}    {k>0}     {i>0}   {metered}       {betabar[i][k]>0}
+               n[i][k+1] -n[i][k] -f[i-1][k]  -r[i][k] +inv(betabar[i][k])*f[i][k]
+
+              RHS:
                     {k>0}  {k==0}
                LHS =  0  + n[i][0]
             */
+
             for(k=0;k<K;k++){
+                Linear C = new Linear();
+
+                // LHS
+                C.add(+1d,getVar("n",i,k+1));
+                if(k>0)
+                    C.add(-1d,getVar("n",i,k));
+                if(i>0)
+                    C.add(-1d,getVar("f",i-1,k));
+                if(seg.is_metered)
+                    C.add(-1d,getVar("r",i,k));
+                if(seg.betabar(k)!=0d)
+                    C.add(+1/seg.betabar(k),getVar("f",i,k));
+
+                // RHS
                 rhs = k==0 ? seg.no : 0;
-                L.add(seg.lhs_MLcons.get(k),"=",rhs);
+                rhs += !seg.is_metered ? seg.d(k) : 0;
+                L.add(C,"=",rhs);
             }
 
             /* RHS: or conservation
@@ -188,18 +167,34 @@ public class LPBuilder {
                 for(k=0;k<K;k++){
                     rhs = seg.d(k);
                     rhs += k==0 ? seg.lo : 0;
-                    L.add(seg.lhs_ORcons.get(k),"=",rhs);
+                    L.add(seg.ORcons.get(k),"=",rhs);
                 }
 
-            /* RHS: ml flow freeflow
+
+            /* mainline flows - freeflow
+               for each i in 0...I-1, k in 0...K-1
+               {always}           {k>0}                       {metered}
+               f[i][k] -betabar[i][k]*v[i]*n[i][k] - betabar[i][k]*v[i]*gamma*r[i][k]
+
+              RHS: ml flow freeflow
                for each i in 0...I-1, k in 0...K-1
                                 {k==0}                      {!metered}
                LHS <= betabar[i][0]*v[i]*n[i][0] + betabar[i][k]*v[i]*gamma*d[i][k]
              */
             for(k=0;k<K;k++){
+                Linear C = new Linear();
+
+                // LHS
+                C.add(+1d,getVar("f",i,k));
+                if(k>0 && seg.betabar(k)>0)
+                    C.add(-seg.betabar(k)*seg.vf,getVar("n",i,k));
+                if(seg.is_metered && seg.betabar(k)>0)
+                    C.add(-seg.betabar(k)*seg.vf*gamma,getVar("r",i,k));
+
+                // RHS
                 rhs = k==0 ? seg.betabar(0)*seg.vf*seg.no : 0;
-                rhs += !seg.is_metered ? seg.betabar(k)*seg.vf*seg.d(k) : 0;
-                L.add(seg.lhs_MLffw.get(0),"<=",rhs);
+                rhs += !seg.is_metered ? seg.betabar(k)*seg.vf*gamma*seg.d(k) : 0;
+                L.add(C,"<=",rhs);
             }
 
             /* RHS: ml flow congestion
@@ -212,8 +207,8 @@ public class LPBuilder {
                 for(k=0;k<K;k++){
                     rhs = next_seg.w*next_seg.n_max;
                     rhs += k==0 ? -next_seg.w*next_seg.no : 0;
-                    rhs += !next_seg.is_metered ? -gamma*next_seg.w*next_seg.d(0) : 0;
-                    L.add(seg.lhs_MLcng.get(0),"<=",rhs);
+                    rhs += !next_seg.is_metered ? -gamma*next_seg.w*next_seg.d(k) : 0;
+                    L.add(seg.MLcng.get(k),"<=",rhs);
                 }
             }
 
@@ -223,8 +218,11 @@ public class LPBuilder {
                LHS <= d[i][k]
              */
             if(seg.is_metered)
-                for(k=0;k<K;k++)
-                    L.add(seg.lhs_ORdem.get(k),"<=",seg.d(k));
+                for(k=0;k<K;k++){
+                    rhs = k==0 ? seg.lo : 0;
+                    rhs += seg.d(k);
+                    L.add(seg.ORdem.get(k),"<=",rhs);
+                }
 
             /* BOUND: mainline capacity
                for each i in 0...I-1, k in 0...K-1
@@ -233,13 +231,13 @@ public class LPBuilder {
             for(k=0;k<K;k++)
                 L.setVarUpperBound(getVar("f",i,k),seg.f_max);
 
-            /* BOUND: queue length limit
+            /* BOUND: maximum metering rate
                for each metered i in 0...I-1, k in 0...K-1
-               l[i][k] <= lmax[i]
+               r[i][k] <= rmax[i]
              */
             if(seg.is_metered)
                 for(k=0;k<K;k++)
-                    L.setVarUpperBound(getVar("l",i,k+1),seg.l_max);
+                    L.setVarUpperBound(getVar("r", i, k), seg.r_max);
 
             /* BOUND: onramp flow positivity
                for each metered i in 0...I-1, k in 0...K-1
@@ -249,13 +247,14 @@ public class LPBuilder {
                 for(k=0;k<K;k++)
                     L.setVarLowerBound(getVar("r",i,k),0);
 
-            /* BOUND: maximum metering rate
+            /* BOUND: queue length limit
                for each metered i in 0...I-1, k in 0...K-1
-               r[i][k] <= rmax[i]
+               l[i][k] <= lmax[i]
              */
-            if(seg.is_metered)
+            if(seg.is_metered && !seg.l_max.isInfinite())
                 for(k=0;k<K;k++)
-                    L.setVarUpperBound(getVar("r", i, k), seg.r_max);
+                    L.setVarUpperBound(getVar("l",i,k+1),seg.l_max);
+
         }
 
         PrintWriter out = new PrintWriter("C:\\Users\\gomes\\Desktop\\aaa.txt");

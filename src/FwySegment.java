@@ -17,26 +17,24 @@ public class FwySegment {
     protected Long fr_node_id;
 
     // fundamental diagram
-    protected double vf;
-    protected double w;
-    protected double f_max;
-    protected double n_max;
+    protected Double vf;
+    protected Double w;
+    protected Double f_max;
+    protected Double n_max;
 
     // initial condition
-    protected double no;
-    protected double lo;
+    protected Double no;
+    protected Double lo;
 
     // metering
     protected boolean is_metered;
-    protected double l_max;
-    protected double r_max;
+    protected Double l_max;
+    protected Double r_max;
 
     // constraints
-    protected List<Linear> lhs_MLcons = new ArrayList<Linear>();
-    protected List<Linear> lhs_ORcons = new ArrayList<Linear>();
-    protected List<Linear> lhs_MLffw = new ArrayList<Linear>();
-    protected List<Linear> lhs_MLcng = new ArrayList<Linear>();
-    protected List<Linear> lhs_ORdem = new ArrayList<Linear>();
+    protected List<Linear> ORcons = new ArrayList<Linear>();
+    protected List<Linear> MLcng = new ArrayList<Linear>();
+    protected List<Linear> ORdem = new ArrayList<Linear>();
 
     // data profiles
     protected ArrayList<Double> demand_profile;
@@ -72,37 +70,26 @@ public class FwySegment {
             l_max = Double.POSITIVE_INFINITY;
         }
 
-        // constraints=
-        lhs_MLcons = new ArrayList<Linear>();
-        lhs_ORcons = new ArrayList<Linear>();
-        lhs_MLffw = new ArrayList<Linear>();
-        lhs_MLcng = new ArrayList<Linear>();
-        lhs_ORdem = new ArrayList<Linear>();
-
     }
 
     ///////////////////////////////////////////////////////////////////
     // get
     ///////////////////////////////////////////////////////////////////
 
-    public boolean hasML(){
-        return ml_link_id!=null;
-    }
-
-    public boolean hasOR(){
-        return or_link_id!=null;
-    }
-
-    public boolean hasFR(){
-        return fr_link_id!=null;
-    }
-
     public double d(int k){
-        return Double.NaN;
+        try{
+            return demand_profile.get(k);
+        } catch(Exception e){
+            return 0d;
+        }
     }
 
     public double betabar(int k){
-        return Double.NaN;
+        try{
+            return 1-split_ratio_profile.get(k);
+        } catch(Exception e){
+            return 1d;
+        }
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -116,15 +103,6 @@ public class FwySegment {
 
     protected void reset_demands(){
         demand_profile = new ArrayList<Double>();
-    }
-
-    protected void reset_split_ratios(){
-        split_ratio_profile = new ArrayList<Double>();
-    }
-
-    protected void add_demands(String str,double dt){
-
-
     }
 
     ///////////////////////////////////////////////////////////////////
