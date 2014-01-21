@@ -17,19 +17,21 @@ public class FwySegment {
     protected Long fr_node_id;
 
     // fundamental diagram
-    protected Double vf;
-    protected Double w;
-    protected Double f_max;
-    protected Double n_max;
+    protected Double vf;        // [veh] free flow speed
+    protected Double w;         // [veh] congestion wave speed
+    protected Double f_max;     // [veh] mainline capacity
+    protected Double n_max;     // [veh] mainline jam density
+    protected Double ml_link_length; // [m] length of the mainlikne link
+    protected Double or_lanes;  // [-] onramp lanes
 
     // initial condition
-    protected Double no;
-    protected Double lo;
+    protected Double no;        // [veh] initial ml vehicles
+    protected Double lo;        // [veh] initial or vehicles
 
     // metering
     protected boolean is_metered;
-    protected Double l_max;
-    protected Double r_max;
+    protected Double l_max;     // [veh] maximum or queue length
+    protected Double r_max;     // [veh] maximum or meterign rate
 
     // constraints
     protected List<Linear> ORcons = new ArrayList<Linear>();
@@ -37,32 +39,45 @@ public class FwySegment {
     protected List<Linear> ORdem = new ArrayList<Linear>();
 
     // data profiles
-    protected ArrayList<Double> demand_profile;
-    protected ArrayList<Double> split_ratio_profile;
+    protected ArrayList<Double> demand_profile;         // [veh] onramp demands
+    protected ArrayList<Double> split_ratio_profile;    // [veh] offramp splits
 
     ///////////////////////////////////////////////////////////////////
     // construction
     ///////////////////////////////////////////////////////////////////
 
-    public FwySegment(Link ml_link,Link or_link,Link fr_link,FundamentalDiagram fd,Actuator actuator){
+    public FwySegment(Link ml_link,Link or_link,Link fr_link,FundamentalDiagram fd,Actuator actuator,double sim_dt_in_seconds){
 
         // link references
-        this.ml_link_id = ml_link==null?null:ml_link.getId();
-        this.or_link_id = or_link==null?null:or_link.getId();
-        this.fr_link_id = fr_link==null?null:fr_link.getId();
-        this.fr_node_id = fr_link==null?null: fr_link.getBegin().getNodeId();
+        ml_link_id = ml_link==null?null:ml_link.getId();
+        or_link_id = or_link==null?null:or_link.getId();
+        fr_link_id = fr_link==null?null:fr_link.getId();
+        fr_node_id = fr_link==null?null: fr_link.getBegin().getNodeId();
+        ml_link_length = ml_link.getLength();
+        or_lanes = or_link==null?null:or_link.getLanes();
+
+        double ml_lanes = ml_link.getLanes();
 
         // fundamental diagram
         f_max = fd.getCapacity();
-        vf= fd.getFreeFlowSpeed();
+        f_max *= sim_dt_in_seconds*ml_lanes;
+
+        vf = fd.getFreeFlowSpeed();
+        vf *= sim_dt_in_seconds/ml_link_length;
+
         w = fd.getCongestionSpeed();
+        w *= sim_dt_in_seconds/ml_link_length;
+
         n_max = fd.getJamDensity();
+        n_max *= ml_link_length*ml_lanes;
 
         // metering
         is_metered = actuator!=null;
         if(is_metered){
             Parameters P = (Parameters) actuator.getParameters();
             r_max = Double.parseDouble(P.get("max_rate_in_vphpl"));
+            r_max *= or_lanes*sim_dt_in_seconds;                 // ???????????
+
             l_max = Double.parseDouble(P.get("max_queue_length_in_veh"));
         }
         else{
@@ -103,6 +118,10 @@ public class FwySegment {
 
     protected void reset_demands(){
         demand_profile = new ArrayList<Double>();
+    }
+
+    protected void add_to_no_in_vpm(double x){
+        no += x*ml_link_length;
     }
 
     ///////////////////////////////////////////////////////////////////

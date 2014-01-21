@@ -9,26 +9,33 @@ import java.io.PrintWriter;
 public class LP_ramp_metering {
 
     private FwyNetwork fwy;
-    private double dt;                  // time step in seconds
+    private double sim_dt_in_seconds;                  // time step in seconds
     private int K;                      // number of time steps
     private int I;                      // number of segments
     private double eta = 1.0;           // J = TVH - eta*TVM
     private double gamma = 1d;          // merge coefficient
     private Linear J = new Linear();
+    protected boolean is_valid;
+    protected String validation_message;
 
     ///////////////////////////////////////////////////////////////////
     // construction
     ///////////////////////////////////////////////////////////////////
 
-    public LP_ramp_metering(Network network, FundamentalDiagramSet fds, ActuatorSet actuators, int K, double dt) throws Exception{
+    public LP_ramp_metering(Scenario scenario, int K, double sim_dt_in_seconds) throws Exception{
 
         int i,k;
 
+        // constant information
+        Network network = scenario.getNetworkSet().getNetwork().get(0);
+        ActuatorSet actuators = scenario.getActuatorSet();
+        FundamentalDiagramSet fds = scenario.getFundamentalDiagramSet();
+
         // Make the freeway structure
-        fwy = new FwyNetwork(network,fds,actuators);
+        fwy = new FwyNetwork(network,fds,actuators,sim_dt_in_seconds);
 
         this.K = K;
-        this.dt = dt;
+        this.sim_dt_in_seconds = sim_dt_in_seconds;
         this.I = fwy.getSegments().size();
 
         /* objective function:
@@ -102,21 +109,33 @@ public class LP_ramp_metering {
                 }
             }
         }
+
+
+        // VALIDATION ............................................
+        is_valid = true;
+        validation_message = "Error in scenario.";
+
+        if(scenario.getSettings().getUnits().compareToIgnoreCase("si")!=0){
+            is_valid = false;
+            validation_message = validation_message.concat("\n+ Wrong units.");
+        }
+
+
     }
 
     ///////////////////////////////////////////////////////////////////
     // solve problem
     ///////////////////////////////////////////////////////////////////
 
-    public void solve(InitialDensitySet ic, DemandSet demand_set, SplitRatioSet split_ratios) throws Exception {
+    protected void solve(InitialDensitySet ic, DemandSet demand_set, SplitRatioSet split_ratios) throws Exception {
 
         int i,k;
         double rhs;
 
         // copy input to fwy structure
         fwy.set_ic(ic);
-        fwy.set_demands(demand_set,dt,K);
-        fwy.set_split_ratios(split_ratios,dt,K);
+        fwy.set_demands(demand_set,sim_dt_in_seconds,K);
+        fwy.set_split_ratios(split_ratios,sim_dt_in_seconds,K);
 
         // generate problem, assign objective function
         Problem L = new Problem();

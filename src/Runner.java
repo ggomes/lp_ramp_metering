@@ -9,22 +9,21 @@ public class Runner {
 
     public static void main(String [] args){
 
-        double dt = 5d;
         int num_time = 3;
+        double sim_dt_in_seconds = 5d;
 
         try {
 
             // load the scenario
             Scenario scenario = ObjectFactory.createAndLoadScenario("data\\15S_20131002_db.xml");
-            scenario.initialize(dt,0d,num_time*dt,1);
-
-            // constant information
-            Network network = scenario.getNetworkSet().getNetwork().get(0);
-            ActuatorSet actuators = scenario.getActuatorSet();
-            FundamentalDiagramSet fds = scenario.getFundamentalDiagramSet();
+            scenario.initialize(sim_dt_in_seconds,0d,num_time*sim_dt_in_seconds,1);
 
             // construct solver
-            LP_ramp_metering lpbuilder = new LP_ramp_metering(network,fds,actuators,num_time,dt);
+            LP_ramp_metering lp_ramp_metering = new LP_ramp_metering(scenario,num_time,sim_dt_in_seconds);
+
+            // validate
+            if(!lp_ramp_metering.is_valid)
+                throw new Exception(lp_ramp_metering.validation_message);
 
             // dynamic information
             DemandSet demand_set = scenario.getDemandSet();
@@ -32,7 +31,7 @@ public class Runner {
             InitialDensitySet ic = scenario.getInitialDensitySet();
 
             // solve
-            lpbuilder.solve(ic, demand_set, split_ratios);
+            lp_ramp_metering.solve(ic, demand_set, split_ratios);
 
         } catch (Exception e) {
             System.err.print(e.getMessage());
