@@ -6,7 +6,7 @@ import java.io.PrintWriter;
 /**
  * Ramp metering with linear programming
  */
-public class LPBuilder {
+public class LP_ramp_metering {
 
     private FwyNetwork fwy;
     private double dt;                  // time step in seconds
@@ -20,7 +20,7 @@ public class LPBuilder {
     // construction
     ///////////////////////////////////////////////////////////////////
 
-    public LPBuilder(Network network,FundamentalDiagramSet fds,ActuatorSet actuators,int K,double dt) throws Exception{
+    public LP_ramp_metering(Network network, FundamentalDiagramSet fds, ActuatorSet actuators, int K, double dt) throws Exception{
 
         int i,k;
 
@@ -108,7 +108,7 @@ public class LPBuilder {
     // solve problem
     ///////////////////////////////////////////////////////////////////
 
-    public void compute_optimal_metering(InitialDensitySet ic, DemandSet demand_set, SplitRatioSet split_ratios) throws Exception {
+    public void solve(InitialDensitySet ic, DemandSet demand_set, SplitRatioSet split_ratios) throws Exception {
 
         int i,k;
         double rhs;

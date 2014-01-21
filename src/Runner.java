@@ -1,9 +1,6 @@
 import edu.berkeley.path.beats.jaxb.*;
-import edu.berkeley.path.beats.simulator.BeatsException;
 import edu.berkeley.path.beats.simulator.ObjectFactory;
 import edu.berkeley.path.beats.simulator.Scenario;
-
-import java.util.Map;
 
 /**
  * Created by gomes on 1/16/14.
@@ -27,7 +24,7 @@ public class Runner {
             FundamentalDiagramSet fds = scenario.getFundamentalDiagramSet();
 
             // construct solver
-            LPBuilder lpbuilder = new LPBuilder(network,fds,actuators,num_time,dt);
+            LP_ramp_metering lpbuilder = new LP_ramp_metering(network,fds,actuators,num_time,dt);
 
             // dynamic information
             DemandSet demand_set = scenario.getDemandSet();
@@ -35,7 +32,7 @@ public class Runner {
             InitialDensitySet ic = scenario.getInitialDensitySet();
 
             // solve
-            lpbuilder.compute_optimal_metering(ic, demand_set, split_ratios);
+            lpbuilder.solve(ic, demand_set, split_ratios);
 
         } catch (Exception e) {
             System.err.print(e.getMessage());
