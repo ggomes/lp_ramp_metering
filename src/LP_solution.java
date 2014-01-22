@@ -1,9 +1,5 @@
 import net.sf.javailp.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 /**
  * Created by gomes on 1/21/14.
  */
@@ -100,6 +96,13 @@ public class LP_solution {
 
     public String print(String var,boolean matlab){
         String str = "";
+        if(matlab){
+            if(var.compareTo("n")==0 || var.compareTo("l")==0)
+                str = String.format("%s=NaN(%d,%d);\n",var,I,K+1);
+            else
+                str = String.format("%s=NaN(%d,%d);\n",var,I,K);
+        }
+
         for(int i=0;i<Xopt.length;i++)
             str = str.concat(print(var,i,matlab));
         return str;

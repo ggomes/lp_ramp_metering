@@ -12,7 +12,7 @@ public class Runner {
 
     public static void main(String [] args){
 
-        int num_time = 3;
+        int num_time = 60;
         double sim_dt_in_seconds = 5d;
 
         try {
@@ -40,11 +40,10 @@ public class Runner {
             LP_solution opt = lp_ramp_metering.solve(ic, demand_set, split_ratios);
 
             // ge
-//            PrintWriter outX = new PrintWriter("out\\xopt.txt");
-//            outX.print(opt);
-//            outX.close();
-
-            System.out.println(opt.print(true));
+            PrintWriter outX = new PrintWriter("matlab\\xopt.m");
+            outX.print("function [n,l,f,r]=xopt()\n");
+            outX.print(opt.print(true));
+            outX.close();
 
         } catch (Exception e) {
             System.err.print(e.getMessage());
