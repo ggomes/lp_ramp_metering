@@ -13,6 +13,7 @@ public class Runner {
     public static void main(String [] args){
 
         int num_time = 60;
+        int num_time_cooldown = 12;
         double sim_dt_in_seconds = 5d;
 
         try {
@@ -25,7 +26,7 @@ public class Runner {
             scenario.initialize(sim_dt_in_seconds,0d,num_time*sim_dt_in_seconds,1);
 
             // construct solver
-            LP_ramp_metering lp_ramp_metering = new LP_ramp_metering(scenario,num_time,sim_dt_in_seconds);
+            LP_ramp_metering lp_ramp_metering = new LP_ramp_metering(scenario,num_time,num_time_cooldown,sim_dt_in_seconds);
 
             // validate
             if(!lp_ramp_metering.is_valid)

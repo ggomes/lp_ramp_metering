@@ -10,7 +10,8 @@ public class LP_ramp_metering {
 
     private FwyNetwork fwy;
     private double sim_dt_in_seconds;                  // time step in seconds
-    private int K;                      // number of time steps
+    private int K;                      // number of time steps (demand+cooldown)
+    private int Kcool;                  // number of cooldown time steps
     private int I;                      // number of segments
     private double eta = 1.0;           // J = TVH - eta*TVM
     private double gamma = 1d;          // merge coefficient
@@ -22,7 +23,7 @@ public class LP_ramp_metering {
     // construction
     ///////////////////////////////////////////////////////////////////
 
-    public LP_ramp_metering(Scenario scenario, int K, double sim_dt_in_seconds) throws Exception{
+    public LP_ramp_metering(Scenario scenario, int K_dem,int K_cool, double sim_dt_in_seconds) throws Exception{
 
         int i,k;
 
@@ -34,7 +35,8 @@ public class LP_ramp_metering {
         // Make the freeway structure
         fwy = new FwyNetwork(network,fds,actuators,sim_dt_in_seconds);
 
-        this.K = K;
+        this.K = K_dem+K_cool;
+        this.Kcool = K_cool;
         this.sim_dt_in_seconds = sim_dt_in_seconds;
         this.I = fwy.getSegments().size();
 
@@ -133,8 +135,8 @@ public class LP_ramp_metering {
 
         // copy input to fwy structure
         fwy.set_ic(ic);
-        fwy.set_demands(demand_set,sim_dt_in_seconds,K);
-        fwy.set_split_ratios(split_ratios,sim_dt_in_seconds,K);
+        fwy.set_demands(demand_set,sim_dt_in_seconds,K,Kcool);
+        fwy.set_split_ratios(split_ratios,sim_dt_in_seconds,K,Kcool);
 
         // generate problem, assign objective function
         Problem L = new Problem();

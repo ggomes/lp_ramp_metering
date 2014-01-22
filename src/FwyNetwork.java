@@ -202,7 +202,7 @@ public class FwyNetwork {
         }
     }
 
-    protected void set_demands(DemandSet demand_set,double sim_dt_in_seconds,int numT){
+    protected void set_demands(DemandSet demand_set,double sim_dt_in_seconds,int K,int Kcool){
 
         // reset everything to zero
         for(FwySegment seg : segments)
@@ -226,13 +226,12 @@ public class FwyNetwork {
                         }
                     }
                 }
-                seg.demand_profile = sample(demand,dp.getDt(),sim_dt_in_seconds,numT);
+                seg.demand_profile = sample(demand,dp.getDt(),sim_dt_in_seconds,K,Kcool,false);
             }
         }
-
     }
 
-    protected void set_split_ratios(SplitRatioSet srs,double sim_dt_in_seconds,int numT) throws Exception{
+    protected void set_split_ratios(SplitRatioSet srs,double sim_dt_in_seconds,int K,int Kcool) throws Exception{
         int index;
 
         for(SplitRatioProfile srp : srs.getSplitRatioProfile()){
@@ -257,12 +256,12 @@ public class FwyNetwork {
                 if(fr_split.isEmpty() && !ml_split.isEmpty())
                     for(Double d : ml_split)
                         fr_split.add(1-d);
-                segments.get(index).split_ratio_profile = sample(fr_split,srp.getDt(),sim_dt_in_seconds,numT);
+                segments.get(index).split_ratio_profile = sample(fr_split,srp.getDt(),sim_dt_in_seconds,K,Kcool,true);
             }
         }
     }
 
-    private static ArrayList<Double> sample(ArrayList<Double> in,double in_dt,double out_dt,int K_out){
+    private static ArrayList<Double> sample(ArrayList<Double> in,double in_dt,double out_dt,int K_out,int K_out_cool,boolean holdlast){
 
         int k_in,k_out;
         ArrayList<Double> out = new ArrayList<Double>();
@@ -277,10 +276,20 @@ public class FwyNetwork {
         }
 
         // normal case
+        double last = 0d;
         for(k_out=0;k_out<K_out;k_out++){
             k_in = (int) Math.floor(((double)k_out)*out_dt/in_dt);
             k_in = Math.min(k_in,in.size()-1);
-            out.add(in.get(k_in));
+            if(k_out<K_out-K_out_cool){
+                last = in.get(k_in);
+                out.add(last);
+            }
+            else{
+                if(holdlast)
+                    out.add(last);
+                else
+                    out.add(0d);
+            }
         }
         return out;
     }
