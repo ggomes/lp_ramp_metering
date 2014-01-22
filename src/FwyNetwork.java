@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Created by gomes on 1/16/14.
  */
-public class FwyNetwork {
+public final class FwyNetwork {
 
     protected ArrayList<FwySegment> segments;
     protected ArrayList<Long> ml_link_id;
@@ -51,7 +51,7 @@ public class FwyNetwork {
     // get
     ///////////////////////////////////////////////////////////////////
 
-    public List<FwySegment> getSegments() {
+    protected List<FwySegment> getSegments() {
         return segments;
     }
 
@@ -110,10 +110,6 @@ public class FwyNetwork {
 
     private boolean isSource(Link link){
         return link.getBegin_node().getInput_link().length==0;
-    }
-
-    private boolean isSourceType(Link link){
-        return link.getLinkType().getName().compareToIgnoreCase("source")==0;
     }
 
     private boolean isFreewayType(Link link){
@@ -179,6 +175,39 @@ public class FwyNetwork {
             rlink = node.getnIn()==1 ? node.getInput_link()[0] : null;
         }
         return rlink;
+    }
+
+    private static ArrayList<Double> sample(ArrayList<Double> in,double in_dt,double out_dt,int K_out,int K_out_cool,boolean holdlast){
+
+        int k_in,k_out;
+        ArrayList<Double> out = new ArrayList<Double>();
+
+        // edge cases
+        if(in==null)
+            return null;
+        if(in.isEmpty()){
+            for(k_out=0;k_out<K_out;k_out++)
+                out.add(0d);
+            return out;
+        }
+
+        // normal case
+        double last = 0d;
+        for(k_out=0;k_out<K_out;k_out++){
+            k_in = (int) Math.floor(((double)k_out)*out_dt/in_dt);
+            k_in = Math.min(k_in,in.size()-1);
+            if(k_out<K_out-K_out_cool){
+                last = in.get(k_in);
+                out.add(last);
+            }
+            else{
+                if(holdlast)
+                    out.add(last);
+                else
+                    out.add(0d);
+            }
+        }
+        return out;
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -261,41 +290,8 @@ public class FwyNetwork {
         }
     }
 
-    private static ArrayList<Double> sample(ArrayList<Double> in,double in_dt,double out_dt,int K_out,int K_out_cool,boolean holdlast){
-
-        int k_in,k_out;
-        ArrayList<Double> out = new ArrayList<Double>();
-
-        // edge cases
-        if(in==null)
-            return null;
-        if(in.isEmpty()){
-            for(k_out=0;k_out<K_out;k_out++)
-                out.add(0d);
-            return out;
-        }
-
-        // normal case
-        double last = 0d;
-        for(k_out=0;k_out<K_out;k_out++){
-            k_in = (int) Math.floor(((double)k_out)*out_dt/in_dt);
-            k_in = Math.min(k_in,in.size()-1);
-            if(k_out<K_out-K_out_cool){
-                last = in.get(k_in);
-                out.add(last);
-            }
-            else{
-                if(holdlast)
-                    out.add(last);
-                else
-                    out.add(0d);
-            }
-        }
-        return out;
-    }
-
     ///////////////////////////////////////////////////////////////////
-    // Override
+    // print
     ///////////////////////////////////////////////////////////////////
 
     @Override

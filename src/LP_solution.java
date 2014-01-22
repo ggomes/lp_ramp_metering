@@ -1,13 +1,19 @@
 import net.sf.javailp.*;
 
+import java.io.PrintWriter;
+
 /**
  * Created by gomes on 1/21/14.
  */
-public class LP_solution {
+public final class LP_solution {
 
     protected int I;
     protected int K;
     protected SegmentSolution [] Xopt;
+
+    ///////////////////////////////////////////////////////////////////
+    // construction
+    ///////////////////////////////////////////////////////////////////
 
     public LP_solution(Result result,FwyNetwork fwy,int K){
 
@@ -40,6 +46,10 @@ public class LP_solution {
 
     }
 
+    ///////////////////////////////////////////////////////////////////
+    // class
+    ///////////////////////////////////////////////////////////////////
+
     public class SegmentSolution {
         protected double [] n;
         protected double [] l;
@@ -68,9 +78,17 @@ public class LP_solution {
 
     }
 
+    ///////////////////////////////////////////////////////////////////
+    // private
+    ///////////////////////////////////////////////////////////////////
+
     private static String getVar(String name,int seg_index,int timestep){
         return LP_ramp_metering.getVar(name,seg_index,timestep);
     }
+
+    ///////////////////////////////////////////////////////////////////
+    // print
+    ///////////////////////////////////////////////////////////////////
 
     public String print(String var,int seg_index,boolean matlab){
         String str = "";
@@ -120,5 +138,15 @@ public class LP_solution {
         return print(false);
     }
 
+    public void print_to_matlab(String function_name) throws Exception {
+        PrintWriter pw = new PrintWriter("out\\" + function_name + ".m");
+        pw.print("function [n,l,f,r]=" + function_name + "()\n");
+        pw.print(print(true));
+        pw.close();
+    }
 
+    @Override
+    public String toString() {
+        return print();
+    }
 }

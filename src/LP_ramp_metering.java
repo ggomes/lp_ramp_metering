@@ -1,21 +1,20 @@
 import edu.berkeley.path.beats.jaxb.*;
 import net.sf.javailp.*;
 
-import java.io.PrintWriter;
-
 /**
  * Ramp metering with linear programming
  */
 public class LP_ramp_metering {
 
-    private FwyNetwork fwy;
-    private double sim_dt_in_seconds;                  // time step in seconds
-    private int K;                      // number of time steps (demand+cooldown)
-    private int Kcool;                  // number of cooldown time steps
-    private int I;                      // number of segments
-    private double eta = 1.0;           // J = TVH - eta*TVM
-    private double gamma = 1d;          // merge coefficient
-    private Linear J = new Linear();
+    protected FwyNetwork fwy;
+    protected Problem LP;
+    protected double sim_dt_in_seconds;   // time step in seconds
+    protected int K;                      // number of time steps (demand+cooldown)
+    protected int Kcool;                  // number of cooldown time steps
+    protected int I;                      // number of segments
+    protected double eta = 1.0;           // J = TVH - eta*TVM
+    protected double gamma = 1d;          // merge coefficient
+    protected Linear J = new Linear();
     protected boolean is_valid;
     protected String validation_message;
 
@@ -139,8 +138,8 @@ public class LP_ramp_metering {
         fwy.set_split_ratios(split_ratios,sim_dt_in_seconds,K,Kcool);
 
         // generate problem, assign objective function
-        Problem L = new Problem();
-        L.setObjective(J, OptType.MIN);
+        LP = new Problem();
+        LP.setObjective(J, OptType.MIN);
 
         // assign rhs, add constraints for each segment
         for(i=0;i<I;i++){
@@ -174,7 +173,7 @@ public class LP_ramp_metering {
                 // RHS
                 rhs = k==0 ? seg.no : 0;
                 rhs += !seg.is_metered ? seg.d(k) : 0;
-                L.add(C,"=",rhs);
+                LP.add(C, "=", rhs);
             }
 
             /* RHS: or conservation
@@ -186,7 +185,7 @@ public class LP_ramp_metering {
                 for(k=0;k<K;k++){
                     rhs = seg.d(k);
                     rhs += k==0 ? seg.lo : 0;
-                    L.add(seg.ORcons.get(k),"=",rhs);
+                    LP.add(seg.ORcons.get(k), "=", rhs);
                 }
 
 
@@ -213,7 +212,7 @@ public class LP_ramp_metering {
                 // RHS
                 rhs = k==0 ? seg.betabar(0)*seg.vf*seg.no : 0;
                 rhs += !seg.is_metered ? seg.betabar(k)*seg.vf*gamma*seg.d(k) : 0;
-                L.add(C,"<=",rhs);
+                LP.add(C, "<=", rhs);
             }
 
             /* RHS: ml flow congestion
@@ -227,7 +226,7 @@ public class LP_ramp_metering {
                     rhs = next_seg.w*next_seg.n_max;
                     rhs += k==0 ? -next_seg.w*next_seg.no : 0;
                     rhs += !next_seg.is_metered ? -gamma*next_seg.w*next_seg.d(k) : 0;
-                    L.add(seg.MLcng.get(k),"<=",rhs);
+                    LP.add(seg.MLcng.get(k), "<=", rhs);
                 }
             }
 
@@ -240,7 +239,7 @@ public class LP_ramp_metering {
                 for(k=0;k<K;k++){
                     rhs = k==0 ? seg.lo : 0;
                     rhs += seg.d(k);
-                    L.add(seg.ORdem.get(k),"<=",rhs);
+                    LP.add(seg.ORdem.get(k), "<=", rhs);
                 }
 
             /* BOUND: mainline capacity
@@ -248,7 +247,7 @@ public class LP_ramp_metering {
                f[i][k] <= f_max[i]
              */
             for(k=0;k<K;k++)
-                L.setVarUpperBound(getVar("f",i,k),seg.f_max);
+                LP.setVarUpperBound(getVar("f",i,k),seg.f_max);
 
             /* BOUND: maximum metering rate
                for each metered i in 0...I-1, k in 0...K-1
@@ -256,7 +255,7 @@ public class LP_ramp_metering {
              */
             if(seg.is_metered)
                 for(k=0;k<K;k++)
-                    L.setVarUpperBound(getVar("r", i, k), seg.r_max);
+                    LP.setVarUpperBound(getVar("r", i, k), seg.r_max);
 
             /* BOUND: onramp flow positivity
                for each metered i in 0...I-1, k in 0...K-1
@@ -264,7 +263,7 @@ public class LP_ramp_metering {
              */
             if(seg.is_metered)
                 for(k=0;k<K;k++)
-                    L.setVarLowerBound(getVar("r",i,k),0);
+                    LP.setVarLowerBound(getVar("r",i,k),0);
 
             /* BOUND: queue length limit
                for each metered i in 0...I-1, k in 0...K-1
@@ -272,20 +271,15 @@ public class LP_ramp_metering {
              */
             if(seg.is_metered && !seg.l_max.isInfinite())
                 for(k=0;k<K;k++)
-                    L.setVarUpperBound(getVar("l",i,k+1),seg.l_max);
-
+                    LP.setVarUpperBound(getVar("l",i,k+1),seg.l_max);
         }
-
-        PrintWriter outL = new PrintWriter("out\\L.txt");
-        outL.print(L);
-        outL.close();;
 
         // solve
         SolverFactory factory = new SolverFactoryLpSolve(); // use lp_solve
         factory.setParameter(Solver.VERBOSE, 0);
         factory.setParameter(Solver.TIMEOUT, 100); // set timeout to 100 seconds
         Solver solver = factory.get(); // you should use this solver only once for one problem
-        Result result = solver.solve(L);
+        Result result = solver.solve(LP);
 
         return new LP_solution(result,fwy,K);
     }

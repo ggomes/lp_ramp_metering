@@ -152,10 +152,10 @@
    
    <DemandSet id="0" project_id="0">
       <demandProfile dt="30" id="1" link_id_org="7">
-         <demand vehicle_type_id="1">0.277777,0.13888</demand>
+         <demand vehicle_type_id="1">0.0555555555555556,0.0277777777777778</demand>
       </demandProfile>
       <demandProfile dt="30" id="2" link_id_org="5">
-         <demand vehicle_type_id="1">0.555555,0.13888</demand>
+         <demand vehicle_type_id="1">0.1111111111111111,0.0277777777777778</demand>
       </demandProfile>
    </DemandSet>
    
@@ -191,13 +191,13 @@
    </FundamentalDiagramSet>
    
    <InitialDensitySet id="0" project_id="0">
-      <density id="1" link_id="1" vehicle_type_id="1">0.018</density>
-      <density id="2" link_id="2" vehicle_type_id="1">0.018</density>
-      <density id="3" link_id="3" vehicle_type_id="1">0.018</density>
-      <density id="4" link_id="4" vehicle_type_id="1">0.018</density>
-      <density id="5" link_id="5" vehicle_type_id="1">0.018</density>
-      <density id="6" link_id="6" vehicle_type_id="1">0.018</density>
-      <density id="7" link_id="7" vehicle_type_id="1">0.018</density>
+      <density id="1" link_id="1" vehicle_type_id="1">0.0124300807955252</density>
+      <density id="2" link_id="2" vehicle_type_id="1">0.0124300807955252</density>
+      <density id="3" link_id="3" vehicle_type_id="1">0.0124300807955252</density>
+      <density id="4" link_id="4" vehicle_type_id="1">0.0124300807955252</density>
+      <density id="5" link_id="5" vehicle_type_id="1">0.0124300807955252</density>
+      <density id="6" link_id="6" vehicle_type_id="1">0.0124300807955252</density>
+      <density id="7" link_id="7" vehicle_type_id="1">0.0124300807955252</density>
    </InitialDensitySet>
    
 </scenario>

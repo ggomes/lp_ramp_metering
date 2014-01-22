@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Created by gomes on 1/16/14.
  */
-public class FwySegment {
+public final class FwySegment {
 
     // link references
     protected Long ml_link_id;
@@ -89,7 +89,7 @@ public class FwySegment {
     // get
     ///////////////////////////////////////////////////////////////////
 
-    public double d(int k){
+    protected double d(int k){
         try{
             return demand_profile.get(k);
         } catch(Exception e){
@@ -97,7 +97,7 @@ public class FwySegment {
         }
     }
 
-    public double betabar(int k){
+    protected double betabar(int k){
         try{
             return 1-split_ratio_profile.get(k);
         } catch(Exception e){
@@ -135,7 +135,7 @@ public class FwySegment {
     }
 
     ///////////////////////////////////////////////////////////////////
-    // Override
+    // print
     ///////////////////////////////////////////////////////////////////
 
     @Override
@@ -145,6 +145,7 @@ public class FwySegment {
                                "or_link_id=%s\n" +
                                "fr_link_id=%s\n" +
                                "fr_node_id=%s\n" +
+                               "ml_link_length=%.1f\n" +
                                "vf=%.1f\n" +
                                "w=%.1f\n" +
                                "f_max=%.1f\n" +
@@ -160,6 +161,7 @@ public class FwySegment {
                                 or_link_id,
                                 fr_link_id,
                                 fr_node_id,
+                                ml_link_length,
                                 vf,w,f_max,n_max,no,lo,
                                 is_metered,l_max,r_max,
                                 demand_profile==null?"[]":demand_profile.toString(),
