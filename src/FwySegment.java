@@ -21,7 +21,8 @@ public final class FwySegment {
     protected Double w;         // [veh] congestion wave speed
     protected Double f_max;     // [veh] mainline capacity
     protected Double n_max;     // [veh] mainline jam density
-    protected Double ml_link_length; // [m] length of the mainlikne link
+    protected Double ml_link_length; // [m] length of the mainline link
+    protected Double or_link_length; // [m] length of the onramp link
     protected Double or_lanes;  // [-] onramp lanes
 
     // initial condition
@@ -53,7 +54,8 @@ public final class FwySegment {
         or_link_id = or_link==null?null:or_link.getId();
         fr_link_id = fr_link==null?null:fr_link.getId();
         fr_node_id = fr_link==null?null: fr_link.getBegin().getNodeId();
-        ml_link_length = ml_link.getLength();
+        ml_link_length = ml_link==null?null:ml_link.getLength();
+        or_link_length =  or_link==null?null:or_link.getLength();
         or_lanes = or_link==null?null:or_link.getLanes();
 
         double ml_lanes = ml_link.getLanes();
@@ -120,6 +122,10 @@ public final class FwySegment {
 
     protected void add_to_no_in_vpm(double x){
         no += x*ml_link_length;
+    }
+
+    protected void add_to_lo_in_vpm(double x){
+        lo += x*or_link_length;
     }
 
     ///////////////////////////////////////////////////////////////////

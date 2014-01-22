@@ -14,6 +14,7 @@ public final class FwyNetwork {
     protected ArrayList<FwySegment> segments;
     protected ArrayList<Long> ml_link_id;
     protected ArrayList<Long> fr_link_id;
+    protected ArrayList<Long> or_link_id;
     protected ArrayList<Long> or_source_id;
     protected ArrayList<Long> fr_node_id;
 
@@ -26,10 +27,11 @@ public final class FwyNetwork {
         segments = new ArrayList<FwySegment>();
         ml_link_id = new ArrayList<Long>();
         fr_link_id = new ArrayList<Long>();
+        or_link_id = new ArrayList<Long>();
         or_source_id = new ArrayList<Long>();
         fr_node_id = new ArrayList<Long>();
 
-        // find first mainline link, iterate downstream until you reach the end
+        // find first mainline link, then iterate downstream until you reach the end
         Link link = find_first_fwy_link(network);
         while(link!=null){
             Link onramp = start_node_onramp_or_source(link);
@@ -38,6 +40,7 @@ public final class FwyNetwork {
             Actuator actuator = get_onramp_actuator(onramp,actuatorset);
             segments.add(new FwySegment(link,onramp,offramp,fd,actuator,sim_dt_in_seconds));
             ml_link_id.add(link.getId());
+            or_link_id.add(onramp==null?null:onramp.getId());
             Link onramp_source = get_onramp_source(onramp);
             or_source_id.add(onramp_source==null?null:onramp_source.getId());
             fr_link_id.add(offramp==null?null:offramp.getId());
@@ -228,6 +231,9 @@ public final class FwyNetwork {
             int index = ml_link_id.indexOf(D.getLinkId());
             if(index>=0)
                 segments.get(index).add_to_no_in_vpm(Double.parseDouble(D.getContent()));
+            index = or_link_id.indexOf(D.getLinkId());
+            if(index>=0)
+                segments.get(index).add_to_lo_in_vpm(Double.parseDouble(D.getContent()));
         }
     }
 

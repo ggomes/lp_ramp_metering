@@ -1,14 +1,23 @@
-function [n,l,f,r]=plot_xopt(scriptname)
+function [n,l,f,r]=plot_xopt(folder,scriptname)
 
+here = fileparts(mfilename('fullpath'));
+
+cd(folder)
 eval(['[n,l,f,r]=' scriptname '();'])
+cd(here)
 
-figure
+t = 1:size(n,2);
 
+figure('Position',[403    33   560   633])
 subplot(411)
-plot(n)
+plot(t,n)
+ylabel('n')
 subplot(412)
-plot(f)
+plot(t,f)
+ylabel('f')
 subplot(413)
-plot(l)
+plot(t,l)
+ylabel('l')
 subplot(414)
-plot(r)
+plot(t,r)
+ylabel('r')

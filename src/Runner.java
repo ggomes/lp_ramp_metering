@@ -11,15 +11,15 @@ public class Runner {
 
     public static void main(String [] args){
 
-        int num_time = 6;
-        int num_time_cooldown = 3;
+        int num_time = 10;
+        int num_time_cooldown = 30;
         double sim_dt_in_seconds = 5d;
-        String suffix = "si";
+        String suffix = "us";
 
         try {
 
             // load the scenario
-            String config_file = "data\\bla_si.xml";
+            String config_file = "data\\bla_us.xml";
             //String config_file = "data\\15S_20131002_db.xml";
 
             Scenario scenario = ObjectFactory.createAndLoadScenario(config_file);
