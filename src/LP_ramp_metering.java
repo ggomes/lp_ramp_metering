@@ -147,7 +147,6 @@ public class LP_ramp_metering {
 
             FwySegment seg = fwy.getSegments().get(i);
 
-
             /* mainline conservation (LHS)
                for each i in 0...I-1, k in 0...K-1
                 {always}    {k>0}     {i>0}   {metered}       {betabar[i][k]>0}

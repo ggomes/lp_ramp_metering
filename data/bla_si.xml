@@ -111,37 +111,37 @@
             </node>
          </NodeList>
          <LinkList>
-            <link id="1" lanes="1" length="30" link_name="1" speed_limit="0">
+            <link id="1" lanes="1" length="200" link_name="1" speed_limit="0">
                <begin node_id="0"/>
                <end node_id="1"/>
                <link_type id="1" name="Freeway"/>
             </link>
-            <link id="2" lanes="1" length="30" link_name="2" speed_limit="0">
+            <link id="2" lanes="1" length="200" link_name="2" speed_limit="0">
                <begin node_id="1"/>
                <end node_id="2"/>
                <link_type id="1" name="Freeway"/>
             </link>
-            <link id="3" lanes="1" length="30" link_name="3" speed_limit="0">
+            <link id="3" lanes="1" length="200" link_name="3" speed_limit="0">
                <begin node_id="2"/>
                <end node_id="3"/>
                <link_type id="1" name="Freeway"/>
             </link>
-            <link id="4" lanes="1" length="30" link_name="4" speed_limit="0">
+            <link id="4" lanes="1" length="200" link_name="4" speed_limit="0">
                <begin node_id="3"/>
                <end node_id="4"/>
                <link_type id="1" name="Freeway"/>
             </link>
-            <link id="5" lanes="1" length="30" link_name="5" speed_limit="0">
+            <link id="5" lanes="1" length="200" link_name="5" speed_limit="0">
                <begin node_id="5"/>
                <end node_id="2"/>
                <link_type id="3" name="On-Ramp"/>
             </link>
-            <link id="6" lanes="1" length="30" link_name="6" speed_limit="0">
+            <link id="6" lanes="1" length="200" link_name="6" speed_limit="0">
                <begin node_id="3"/>
                <end node_id="6"/>
                <link_type id="4" name="Off-Ramp"/>
             </link>
-            <link id="7" lanes="1" length="30" link_name="7" speed_limit="0">
+            <link id="7" lanes="1" length="200" link_name="7" speed_limit="0">
                <begin node_id="-1"/>
                <end node_id="0"/>
                <link_type id="3" name="On-Ramp"/>
@@ -149,50 +149,55 @@
          </LinkList>
       </network>
    </NetworkSet>
+   
    <DemandSet id="0" project_id="0">
       <demandProfile dt="30" id="1" link_id_org="7">
-         <demand vehicle_type_id="1">200.0000000,100.0000000</demand>
+         <demand vehicle_type_id="1">0.277777,0.13888</demand>
       </demandProfile>
       <demandProfile dt="30" id="2" link_id_org="5">
-         <demand vehicle_type_id="1">400.0000000,100.0000000</demand>
+         <demand vehicle_type_id="1">0.555555,0.13888</demand>
       </demandProfile>
    </DemandSet>
+   
    <SplitRatioSet id="0" project_id="0">
       <splitRatioProfile dt="30" id="1" node_id="3">
          <splitratio link_in="3" link_out="6" vehicle_type_id="1">0.1,0.2,0.2</splitratio>
          <!--<splitratio link_in="3" link_out="4" vehicle_type_id="1">0.9,0.8,0.8</splitratio>-->
       </splitRatioProfile>
    </SplitRatioSet>
+   
    <FundamentalDiagramSet id="0" project_id="0">
       <fundamentalDiagramProfile id="1" link_id="1">
-         <fundamentalDiagram capacity="1" congestion_speed="1" free_flow_speed="1" id="0" order="0"/>
+         <fundamentalDiagram capacity="0.5" congestion_speed="6.704" free_flow_speed="26.82" id="0" order="0"/>
       </fundamentalDiagramProfile>
       <fundamentalDiagramProfile id="2" link_id="2">
-         <fundamentalDiagram capacity="1" congestion_speed="1" free_flow_speed="1" id="0" order="0"/>
+         <fundamentalDiagram capacity="0.5" congestion_speed="6.704" free_flow_speed="26.82" id="0" order="0"/>
       </fundamentalDiagramProfile>
       <fundamentalDiagramProfile id="3" link_id="3">
-         <fundamentalDiagram capacity="1" congestion_speed="1" free_flow_speed="1" id="0" order="0"/>
+         <fundamentalDiagram capacity="0.5" congestion_speed="6.704" free_flow_speed="26.82" id="0" order="0"/>
       </fundamentalDiagramProfile>
       <fundamentalDiagramProfile id="4" link_id="4">
-         <fundamentalDiagram capacity="1" congestion_speed="1" free_flow_speed="1" id="0" order="0"/>
+         <fundamentalDiagram capacity="0.5" congestion_speed="6.704" free_flow_speed="26.82" id="0" order="0"/>
       </fundamentalDiagramProfile>
       <fundamentalDiagramProfile id="5" link_id="5">
-         <fundamentalDiagram capacity="1" congestion_speed="1" free_flow_speed="1" id="0" order="0"/>
+         <fundamentalDiagram capacity="0.5" congestion_speed="6.704" free_flow_speed="26.82" id="0" order="0"/>
       </fundamentalDiagramProfile>
       <fundamentalDiagramProfile id="6" link_id="6">
-         <fundamentalDiagram capacity="1" congestion_speed="1" free_flow_speed="1" id="0" order="0"/>
+         <fundamentalDiagram capacity="0.5" congestion_speed="6.704" free_flow_speed="26.82" id="0" order="0"/>
       </fundamentalDiagramProfile>
       <fundamentalDiagramProfile id="7" link_id="7">
-         <fundamentalDiagram capacity="1" congestion_speed="1" free_flow_speed="1" id="0" order="0"/>
+         <fundamentalDiagram capacity="0.5" congestion_speed="6.704" free_flow_speed="26.82" id="0" order="0"/>
       </fundamentalDiagramProfile>
    </FundamentalDiagramSet>
+   
    <InitialDensitySet id="0" project_id="0">
-      <density id="1" link_id="1" vehicle_type_id="1">0.5</density>
-      <density id="2" link_id="2" vehicle_type_id="1">0.5</density>
-      <density id="3" link_id="3" vehicle_type_id="1">0.5</density>
-      <density id="4" link_id="4" vehicle_type_id="1">0.5</density>
-      <density id="5" link_id="5" vehicle_type_id="1">0.5</density>
-      <density id="6" link_id="6" vehicle_type_id="1">0.5</density>
-      <density id="7" link_id="7" vehicle_type_id="1">0.5</density>
+      <density id="1" link_id="1" vehicle_type_id="1">0.018</density>
+      <density id="2" link_id="2" vehicle_type_id="1">0.018</density>
+      <density id="3" link_id="3" vehicle_type_id="1">0.018</density>
+      <density id="4" link_id="4" vehicle_type_id="1">0.018</density>
+      <density id="5" link_id="5" vehicle_type_id="1">0.018</density>
+      <density id="6" link_id="6" vehicle_type_id="1">0.018</density>
+      <density id="7" link_id="7" vehicle_type_id="1">0.018</density>
    </InitialDensitySet>
+   
 </scenario>
