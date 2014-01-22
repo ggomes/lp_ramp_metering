@@ -110,7 +110,6 @@ public class LP_ramp_metering {
             }
         }
 
-
         // VALIDATION ............................................
         is_valid = true;
         validation_message = "Error in scenario.";
@@ -276,9 +275,9 @@ public class LP_ramp_metering {
 
         }
 
-        PrintWriter out = new PrintWriter("C:\\Users\\gomes\\Desktop\\aaa.txt");
-        out.print(L.toString());
-        out.close();;
+        PrintWriter outL = new PrintWriter("out\\L.txt");
+        outL.print(L);
+        outL.close();;
 
         // solve
         SolverFactory factory = new SolverFactoryLpSolve(); // use lp_solve
@@ -287,7 +286,9 @@ public class LP_ramp_metering {
         Solver solver = factory.get(); // you should use this solver only once for one problem
         Result result = solver.solve(L);
 
-        System.out.println(result);
+        PrintWriter outX = new PrintWriter("out\\xopt.txt");
+        outX.print(result);
+        outX.close();;
     }
 
     ///////////////////////////////////////////////////////////////////

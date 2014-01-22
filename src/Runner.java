@@ -15,7 +15,10 @@ public class Runner {
         try {
 
             // load the scenario
-            Scenario scenario = ObjectFactory.createAndLoadScenario("data\\15S_20131002_db.xml");
+            String config_file = "data\\bla.xml";
+            //String config_file = "data\\15S_20131002_db.xml";
+
+            Scenario scenario = ObjectFactory.createAndLoadScenario(config_file);
             scenario.initialize(sim_dt_in_seconds,0d,num_time*sim_dt_in_seconds,1);
 
             // construct solver

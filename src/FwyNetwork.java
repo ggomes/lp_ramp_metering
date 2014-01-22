@@ -69,11 +69,9 @@ public class FwyNetwork {
         for(edu.berkeley.path.beats.jaxb.Link jlink : network.getLinkList().getLink()){
             Link link = (Link) jlink;
             Node end_node = link.getEnd_node();
-            boolean supplies_onramp = end_node.getnIn()==1
-                               && end_node.getnOut()==1
-                               && isOnrampType(end_node.getOutput_link()[0]);
-            if(link.isSource())
-                if( isFreewayType(link) || !supplies_onramp)
+            boolean end_node_is_simple = end_node.getnIn()==1 && end_node.getnOut()==1;
+            boolean supplies_onramp = end_node.getnOut()>0 ? isOnrampType(end_node.getOutput_link()[0]) : false;
+            if( link.isSource() &&  end_node_is_simple && !supplies_onramp)
                     first_fwy_list.add(link);
         }
 
@@ -86,8 +84,8 @@ public class FwyNetwork {
 
         Link first_fwy = first_fwy_list.get(0);
 
-        // if it is a source type link, use next
-        if(isSourceType(first_fwy))
+        // if it is a source link, use next
+        if(isSource(first_fwy))
             first_fwy = first_fwy.getEnd_node().getOutput_link()[0];
 
         return first_fwy;
@@ -162,6 +160,8 @@ public class FwyNetwork {
 
     private Actuator get_onramp_actuator(Link onramp,ActuatorSet actuatorset){
         if(actuatorset==null)
+            return null;
+        if(onramp==null)
             return null;
         for(Actuator actuator : actuatorset.getActuator()){
             if( actuator.getActuatorType().getName().compareTo("ramp_meter")==0 &&

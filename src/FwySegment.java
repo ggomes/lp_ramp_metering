@@ -68,17 +68,15 @@ public class FwySegment {
         w = fd.getCongestionSpeed();
         w *= sim_dt_in_seconds/ml_link_length;
 
-        n_max = fd.getJamDensity();
+        n_max = fd.getJamDensity()!=null ? fd.getJamDensity() : f_max*(1/vf+1/w);
         n_max *= ml_link_length*ml_lanes;
 
         // metering
         is_metered = actuator!=null;
         if(is_metered){
             Parameters P = (Parameters) actuator.getParameters();
-            r_max = Double.parseDouble(P.get("max_rate_in_vphpl"));
-            r_max *= or_lanes*sim_dt_in_seconds;                 // ???????????
-
-            l_max = Double.parseDouble(P.get("max_queue_length_in_veh"));
+            r_max = get_parameter(P,"max_rate_in_vphpl",Double.POSITIVE_INFINITY)*or_lanes*sim_dt_in_seconds;
+            l_max = get_parameter(P,"max_queue_length_in_veh",Double.POSITIVE_INFINITY);
         }
         else{
             r_max = Double.POSITIVE_INFINITY;
@@ -122,6 +120,18 @@ public class FwySegment {
 
     protected void add_to_no_in_vpm(double x){
         no += x*ml_link_length;
+    }
+
+    ///////////////////////////////////////////////////////////////////
+    // private
+    ///////////////////////////////////////////////////////////////////
+
+    private Double get_parameter(Parameters P,String name,Double def){
+        if(P==null)
+            return def;
+        if(!P.has(name))
+            return def;
+        return Double.parseDouble(P.get(name));
     }
 
     ///////////////////////////////////////////////////////////////////
