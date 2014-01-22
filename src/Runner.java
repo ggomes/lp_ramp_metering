@@ -1,6 +1,9 @@
 import edu.berkeley.path.beats.jaxb.*;
 import edu.berkeley.path.beats.simulator.ObjectFactory;
 import edu.berkeley.path.beats.simulator.Scenario;
+import net.sf.javailp.Result;
+
+import java.io.PrintWriter;
 
 /**
  * Created by gomes on 1/16/14.
@@ -34,7 +37,14 @@ public class Runner {
             InitialDensitySet ic = scenario.getInitialDensitySet();
 
             // solve
-            lp_ramp_metering.solve(ic, demand_set, split_ratios);
+            LP_solution opt = lp_ramp_metering.solve(ic, demand_set, split_ratios);
+
+            // ge
+//            PrintWriter outX = new PrintWriter("out\\xopt.txt");
+//            outX.print(opt);
+//            outX.close();
+
+            System.out.println(opt.print(true));
 
         } catch (Exception e) {
             System.err.print(e.getMessage());

@@ -126,7 +126,7 @@ public class LP_ramp_metering {
     // solve problem
     ///////////////////////////////////////////////////////////////////
 
-    protected void solve(InitialDensitySet ic, DemandSet demand_set, SplitRatioSet split_ratios) throws Exception {
+    protected LP_solution solve(InitialDensitySet ic, DemandSet demand_set, SplitRatioSet split_ratios) throws Exception {
 
         int i,k;
         double rhs;
@@ -286,16 +286,14 @@ public class LP_ramp_metering {
         Solver solver = factory.get(); // you should use this solver only once for one problem
         Result result = solver.solve(L);
 
-        PrintWriter outX = new PrintWriter("out\\xopt.txt");
-        outX.print(result);
-        outX.close();;
+        return new LP_solution(result,fwy,K);
     }
 
     ///////////////////////////////////////////////////////////////////
     // private
     ///////////////////////////////////////////////////////////////////
 
-    private String getVar(String name,int index,int timestep){
+    public static String getVar(String name,int index,int timestep){
         return name+"_"+index+"_"+timestep;
     }
 }
